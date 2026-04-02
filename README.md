@@ -79,6 +79,25 @@ then look for lines like this in the console output in order to find the URL to 
 Login to the dashboard at: http://localhost:19888/login?t=uniquelogincodeforyou
 ```
 
+### Run fully local (localhost only)
+
+If you want a local-only setup with no Azure dependencies and HTTP endpoints (to avoid local cert friction), run:
+
+```powershell
+./build/local/run-local.ps1
+```
+
+This script:
+- Verifies `dotnet` and `docker` are available.
+- Verifies Docker Desktop is running.
+- Sets `ESHOP_USE_HTTP_ENDPOINTS=true` and starts `src/eShop.AppHost`.
+
+To use HTTPS endpoint behavior instead, run:
+
+```powershell
+./build/local/run-local.ps1 -UseHttps
+```
+
 > You may need to install ASP.NET Core HTTPS development certificates first, and then close all browser tabs. Learn more at https://aka.ms/aspnet/https-trust-dev-cert
 
 ### Azure Open AI

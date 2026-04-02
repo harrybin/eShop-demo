@@ -110,6 +110,16 @@ static bool ShouldUseHttpForEndpoints()
     const string EnvVarName = "ESHOP_USE_HTTP_ENDPOINTS";
     var envValue = Environment.GetEnvironmentVariable(EnvVarName);
 
-    // Attempt to parse the environment variable value; return true if it's exactly "1".
-    return int.TryParse(envValue, out int result) && result == 1;
+    if (string.IsNullOrWhiteSpace(envValue))
+    {
+        return false;
+    }
+
+    // Accept common truthy values to make local setup easier.
+    if (bool.TryParse(envValue, out var boolResult))
+    {
+        return boolResult;
+    }
+
+    return int.TryParse(envValue, out var intResult) && intResult == 1;
 }
