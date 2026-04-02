@@ -33,4 +33,20 @@ else {
 }
 
 Write-Host "Starting eShop AppHost..."
-dotnet run --project src/eShop.AppHost/eShop.AppHost.csproj
+$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
+$aspireDir = Join-Path $repoRoot ".aspire"
+$logFile = Join-Path $aspireDir "apphost.console.log"
+$dashboardUrlFile = Join-Path $aspireDir "dashboard-login-url.txt"
+
+New-Item -ItemType Directory -Path $aspireDir -Force | Out-Null
+
+dotnet run --project src/eShop.AppHost/eShop.AppHost.csproj 2>&1 |
+    Tee-Object -FilePath $logFile |
+    ForEach-Object {
+        $line = $_.ToString()
+        if ($line -match "Login to the dashboard at\s+(https?://\S+)") {
+            $dashboardUrl = $matches[1]
+            Set-Content -Path $dashboardUrlFile -Value $dashboardUrl -Encoding utf8
+        }
+        Write-Host $line
+    }
