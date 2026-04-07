@@ -1,0 +1,540 @@
+{
+  "repoName": "local/eShop",
+  "purpose": "A reference .NET application implementing an e-commerce website using microservices architecture",
+  "description": "eShop is a .NET Aspire-based reference application showcasing a services-based e-commerce platform. It demonstrates microservices patterns with Catalog, Basket, Ordering, Identity, and Webhook APIs, uses PostgreSQL with pgvector for data storage, RabbitMQ for event-driven communication, and Redis for caching. The application includes a Blazor-based WebApp, MAUI mobile client support, and integrates OpenTelemetry for observability.",
+  "confidence": "high",
+  "sources": [
+    "README.md",
+    "package.json",
+    "Directory.Packages.props",
+    "global.json"
+  ],
+  "stack": {
+    "languages": [
+      "TypeScript",
+      "C#"
+    ],
+    "frameworks": [
+      ".NET 10",
+      ".NET Aspire 13.2.0",
+      "ASP.NET Core",
+      "Blazor",
+      "Entity Framework Core",
+      "gRPC",
+      "Playwright"
+    ],
+    "buildSystem": "npm",
+    "packageManager": "npm",
+    "hasDocker": false,
+    "hasCi": true
+  },
+  "quickstart": {
+    "prerequisites": [
+      "Docker Desktop installed and running",
+      "Visual Studio 2022 v17.10+ with ASP.NET workload and .NET Aspire SDK (Windows), OR",
+      ".NET 10 SDK (Mac/Linux/Windows without VS)",
+      "Optional: Visual Studio Code with C# Dev Kit",
+      "Optional: .NET MAUI workload for mobile client"
+    ],
+    "steps": [
+      "Clone the repository from https://github.com/dotnet/eshop",
+      "Ensure Docker Desktop is running",
+      "Open eShop.Web.slnf in Visual Studio and set eShop.AppHost as startup project, OR run from terminal",
+      "Press Ctrl-F5 in VS or execute the dotnet run command",
+      "Open the Aspire dashboard URL shown in console output (http://localhost:19888/login?t=...)",
+      "Access the eShop web application through the Aspire dashboard"
+    ],
+    "commands": [
+      {
+        "name": "Run application",
+        "command": "dotnet run --project src/eShop.AppHost/eShop.AppHost.csproj",
+        "source": "README.md"
+      },
+      {
+        "name": "Run local HTTP-only",
+        "command": "./build/local/run-local.ps1",
+        "source": "README.md"
+      },
+      {
+        "name": "Run local with HTTPS",
+        "command": "./build/local/run-local.ps1 -UseHttps",
+        "source": "README.md"
+      },
+      {
+        "name": "Build solution",
+        "command": "dotnet build eShop.Web.slnf",
+        "source": ".github/workflows/pr-validation.yml"
+      },
+      {
+        "name": "Run tests",
+        "command": "dotnet test --solution eShop.Web.slnf",
+        "source": ".github/workflows/pr-validation.yml"
+      },
+      {
+        "name": "Run Playwright e2e tests",
+        "command": "npm install && npx playwright test",
+        "source": "package.json"
+      }
+    ],
+    "commonErrors": [
+      {
+        "error": "Docker is not running",
+        "fix": "Start Docker Desktop and ensure it's fully running before launching the application"
+      },
+      {
+        "error": "Port conflicts on 19888 or other ports",
+        "fix": "Stop other services using those ports or restart Docker Desktop"
+      },
+      {
+        "error": "HTTPS certificate trust issues",
+        "fix": "Run 'dotnet dev-certs https --trust' and close all browser tabs"
+      }
+    ],
+    "sources": [
+      "README.md",
+      ".github/workflows/pr-validation.yml"
+    ]
+  },
+  "structure": {
+    "keyDirs": [
+      {
+        "path": "src/",
+        "purpose": "All application source code organized by service/component",
+        "keyFiles": []
+      },
+      {
+        "path": "src/eShop.AppHost/",
+        "purpose": ".NET Aspire orchestration host - configures and launches all services",
+        "keyFiles": [
+          "Program.cs"
+        ]
+      },
+      {
+        "path": "src/Catalog.API/",
+        "purpose": "Product catalog microservice with PostgreSQL and vector search",
+        "keyFiles": [
+          "Program.cs",
+          "Apis/CatalogApi.cs"
+        ]
+      },
+      {
+        "path": "src/Basket.API/",
+        "purpose": "Shopping basket microservice using Redis and gRPC",
+        "keyFiles": [
+          "Program.cs",
+          "Grpc/BasketService.cs"
+        ]
+      },
+      {
+        "path": "src/Ordering.API/",
+        "purpose": "Order management microservice with domain-driven design",
+        "keyFiles": [
+          "Program.cs"
+        ]
+      },
+      {
+        "path": "src/Identity.API/",
+        "purpose": "Authentication and authorization using Duende IdentityServer",
+        "keyFiles": [
+          "Program.cs"
+        ]
+      },
+      {
+        "path": "src/WebApp/",
+        "purpose": "Blazor-based web frontend",
+        "keyFiles": []
+      },
+      {
+        "path": "src/EventBus/",
+        "purpose": "Shared event bus abstractions for microservices communication",
+        "keyFiles": []
+      },
+      {
+        "path": "src/EventBusRabbitMQ/",
+        "purpose": "RabbitMQ implementation of event bus",
+        "keyFiles": []
+      },
+      {
+        "path": "src/eShop.ServiceDefaults/",
+        "purpose": "Shared defaults for observability, health checks, and service discovery",
+        "keyFiles": []
+      },
+      {
+        "path": "tests/",
+        "purpose": "Unit and integration tests for all services",
+        "keyFiles": []
+      },
+      {
+        "path": "e2e/",
+        "purpose": "Playwright end-to-end tests",
+        "keyFiles": [
+          "AddItemTest.spec.ts",
+          "BrowseItemTest.spec.ts"
+        ]
+      }
+    ],
+    "entrypoints": [
+      {
+        "path": "src/eShop.AppHost/Program.cs",
+        "type": "main",
+        "description": "Aspire app host that orchestrates all microservices, databases, and message brokers"
+      },
+      {
+        "path": "src/Catalog.API/Program.cs",
+        "type": "server",
+        "description": "Catalog API service entry point"
+      },
+      {
+        "path": "src/Basket.API/Program.cs",
+        "type": "server",
+        "description": "Basket API service entry point"
+      },
+      {
+        "path": "src/WebApp/Program.cs",
+        "type": "server",
+        "description": "Blazor web application entry point"
+      }
+    ],
+    "testDirs": [
+      "tests/Basket.UnitTests/",
+      "tests/",
+      "e2e/"
+    ],
+    "docsDirs": [
+      "README.md",
+      "CONTRIBUTING.md",
+      "tests/README.md"
+    ],
+    "sources": [
+      "README.md",
+      "src/ directory structure"
+    ]
+  },
+  "ci": {
+    "workflows": [
+      {
+        "name": "Pull Request Validation",
+        "file": ".github/workflows/pr-validation.yml",
+        "triggers": [
+          "pull_request",
+          "push to main"
+        ],
+        "mainSteps": [
+          "Checkout code",
+          "Setup .NET from global.json",
+          "Build eShop.Web.slnf",
+          "Run tests with detailed output"
+        ]
+      },
+      {
+        "name": "Playwright E2E Tests",
+        "file": ".github/workflows/playwright.yml",
+        "triggers": [
+          "pull_request",
+          "push"
+        ],
+        "mainSteps": [
+          "Run Playwright tests for web UI",
+          "Generate test reports"
+        ]
+      },
+      {
+        "name": "Markdown Linting",
+        "file": ".github/workflows/markdownlint.yml",
+        "triggers": [
+          "pull_request"
+        ],
+        "mainSteps": [
+          "Lint markdown files for consistency"
+        ]
+      },
+      {
+        "name": "MAUI PR Validation",
+        "file": ".github/workflows/pr-validation-maui.yml",
+        "triggers": [
+          "pull_request affecting ClientApp"
+        ],
+        "mainSteps": [
+          "Build and test mobile client"
+        ]
+      }
+    ],
+    "mainChecks": [
+      "Build succeeds for eShop.Web.slnf",
+      "All unit tests pass",
+      "Playwright e2e tests pass",
+      "Markdown files follow linting rules"
+    ],
+    "sources": [
+      ".github/workflows/pr-validation.yml",
+      ".github/workflows/playwright.yml",
+      ".github/workflows/markdownlint.yml"
+    ]
+  },
+  "contrib": {
+    "howToAddFeature": [
+      "Review CONTRIBUTING.md for principles: best practices, architectural integrity, realistic tech choices",
+      "For new microservice: Create service project in src/, add to eShop.AppHost/Program.cs orchestration",
+      "For API changes: Follow minimal API pattern in existing services, use versioned endpoints",
+      "Add integration events in EventBus if service-to-service communication needed",
+      "Update AppHost to wire dependencies (databases, message queues, service references)",
+      "Add corresponding unit/integration tests in tests/ directory",
+      "Consider adding Playwright e2e tests in e2e/ if UI is affected"
+    ],
+    "howToAddTest": [
+      "Unit tests: Create/add to tests/{ServiceName}.UnitTests project",
+      "Use MSTest framework (configured in global.json)",
+      "Use NSubstitute for mocking dependencies",
+      "Integration tests: Use WebApplicationFactory and TestHost for API testing",
+      "E2E tests: Add .spec.ts files in e2e/ directory using Playwright",
+      "Run tests with 'dotnet test' or 'npx playwright test'"
+    ],
+    "codeStyle": "Follow .NET best practices and canonical patterns. Use minimal APIs with extension methods for service registration and endpoint mapping. Apply central package management via Directory.Packages.props. Use structured logging, health checks, and OpenTelemetry. See .editorconfig for formatting rules.",
+    "sources": [
+      "CONTRIBUTING.md",
+      "src/Catalog.API/Program.cs",
+      "global.json"
+    ]
+  },
+  "architecture": {
+    "overview": "eShop uses a microservices architecture orchestrated by .NET Aspire. Each service is independently deployable with its own database. Services communicate via RabbitMQ event bus for async operations and gRPC for sync calls. The Aspire AppHost manages service discovery, configuration, and observability. Frontend uses Blazor for web and .NET MAUI for mobile clients.",
+    "components": [
+      {
+        "name": "Catalog.API",
+        "description": "Manages product catalog with PostgreSQL + pgvector for AI-enhanced search. Publishes integration events for catalog changes.",
+        "directory": "src/Catalog.API"
+      },
+      {
+        "name": "Basket.API",
+        "description": "Shopping basket service using Redis for fast storage. Exposes gRPC endpoints and subscribes to order events.",
+        "directory": "src/Basket.API"
+      },
+      {
+        "name": "Ordering.API",
+        "description": "Order processing with DDD patterns (domain models, aggregates). Uses PostgreSQL and publishes order lifecycle events.",
+        "directory": "src/Ordering.API"
+      },
+      {
+        "name": "Identity.API",
+        "description": "Authentication/authorization using Duende IdentityServer with JWT tokens.",
+        "directory": "src/Identity.API"
+      },
+      {
+        "name": "Webhooks.API",
+        "description": "Manages webhook subscriptions and delivery for external integrations.",
+        "directory": "src/Webhooks.API"
+      },
+      {
+        "name": "WebApp",
+        "description": "Blazor Server web UI consuming backend APIs with service discovery.",
+        "directory": "src/WebApp"
+      },
+      {
+        "name": "OrderProcessor & PaymentProcessor",
+        "description": "Background workers processing orders and payments via event bus.",
+        "directory": "src/OrderProcessor, src/PaymentProcessor"
+      },
+      {
+        "name": "EventBus",
+        "description": "Abstraction layer for pub/sub messaging with RabbitMQ implementation.",
+        "directory": "src/EventBus, src/EventBusRabbitMQ"
+      },
+      {
+        "name": "ServiceDefaults",
+        "description": "Shared extensions for observability, health checks, resilience, and service discovery.",
+        "directory": "src/eShop.ServiceDefaults"
+      }
+    ],
+    "dataFlow": "User interacts with WebApp (Blazor) → WebApp calls backend APIs via HTTP → APIs use service discovery to locate each other → Async operations publish events to RabbitMQ → Background workers/services subscribe and react → Each service maintains its own database (Catalog, Order, Identity in PostgreSQL; Basket in Redis) → All telemetry flows to Aspire dashboard via OpenTelemetry",
+    "keyAbstractions": [
+      {
+        "name": "IEventBus",
+        "description": "Abstraction for publishing and subscribing to integration events across microservices. Implemented by RabbitMQ."
+      },
+      {
+        "name": "IntegrationEvent",
+        "description": "Base class for events that cross service boundaries. Includes correlation and timestamp metadata."
+      },
+      {
+        "name": "ServiceDefaults extensions",
+        "description": "Extension methods (AddServiceDefaults, MapDefaultEndpoints) that configure health checks, telemetry, resilience, and service discovery for all services."
+      },
+      {
+        "name": "Minimal API with versioning",
+        "description": "Endpoints defined via MapGroup with explicit API versions (v1, v2) for backward compatibility."
+      },
+      {
+        "name": "Aspire ResourceBuilder",
+        "description": "Fluent API in AppHost for configuring services, databases, message brokers, and their dependencies."
+      }
+    ],
+    "codeExamples": [
+      {
+        "title": "Minimal API endpoint with versioning",
+        "file": "src/Catalog.API/Apis/CatalogApi.cs",
+        "code": "var vApi = app.NewVersionedApi(\"Catalog\");\nvar v1 = vApi.MapGroup(\"api/catalog\").HasApiVersion(1, 0);\nv1.MapGet(\"/items\", GetAllItemsV1)\n    .WithName(\"ListItems\")\n    .WithSummary(\"List catalog items\")\n    .WithTags(\"Items\");",
+        "explanation": "Shows how eShop uses minimal APIs with explicit versioning, descriptive metadata, and route grouping for clean API design."
+      },
+      {
+        "title": "Service defaults registration",
+        "file": "src/Catalog.API/Program.cs",
+        "code": "var builder = WebApplication.CreateBuilder(args);\nbuilder.AddServiceDefaults();\nbuilder.AddApplicationServices();\nbuilder.Services.AddProblemDetails();\nvar withApiVersioning = builder.Services.AddApiVersioning();\nbuilder.AddDefaultOpenApi(withApiVersioning);",
+        "explanation": "Every service follows this pattern: AddServiceDefaults() configures observability, health checks, and resilience; AddApplicationServices() registers service-specific dependencies."
+      },
+      {
+        "title": "Aspire service orchestration",
+        "file": "src/eShop.AppHost/Program.cs",
+        "code": "var redis = builder.AddRedis(\"redis\");\nvar rabbitMq = builder.AddRabbitMQ(\"eventbus\").WithLifetime(ContainerLifetime.Persistent);\nvar postgres = builder.AddPostgres(\"postgres\").WithImage(\"ankane/pgvector\");\nvar catalogDb = postgres.AddDatabase(\"catalogdb\");\nvar catalogApi = builder.AddProject<Projects.Catalog_API>(\"catalog-api\")\n    .WithReference(rabbitMq).WaitFor(rabbitMq)\n    .WithReference(catalogDb);",
+        "explanation": "Aspire AppHost declaratively configures infrastructure (Redis, RabbitMQ, Postgres) and services with dependencies, ensuring proper startup order."
+      },
+      {
+        "title": "Publishing integration event",
+        "file": "Event Bus Pattern",
+        "code": "public class OrderStartedIntegrationEvent : IntegrationEvent\n{\n    public string UserId { get; init; }\n    public string UserName { get; init; }\n}\n\nawait _eventBus.PublishAsync(new OrderStartedIntegrationEvent \n{ \n    UserId = order.BuyerId, \n    UserName = order.BuyerName \n});",
+        "explanation": "Integration events inherit from IntegrationEvent base class and are published via IEventBus. Subscribers in other services react to these events asynchronously."
+      }
+    ],
+    "sources": [
+      "src/eShop.AppHost/Program.cs",
+      "src/Catalog.API/Program.cs",
+      "src/Catalog.API/Apis/CatalogApi.cs",
+      "README.md"
+    ]
+  },
+  "firstTasks": [
+    {
+      "title": "Add product filtering by price range",
+      "description": "Extend the Catalog API to accept min/max price query parameters and filter results. Update the CatalogApi.cs GetAllItems endpoint.",
+      "difficulty": "beginner",
+      "category": "feature",
+      "files": [
+        "src/Catalog.API/Apis/CatalogApi.cs"
+      ],
+      "why": "Great first feature that introduces you to minimal APIs, query parameter binding, and EF Core queries without touching complex business logic."
+    },
+    {
+      "title": "Add unit tests for BasketService gRPC endpoints",
+      "description": "Create comprehensive tests for the basket gRPC service methods (GetBasket, UpdateBasket, DeleteBasket) using NSubstitute mocks.",
+      "difficulty": "beginner",
+      "category": "test",
+      "files": [
+        "tests/Basket.UnitTests/BasketServiceTests.cs",
+        "src/Basket.API/Grpc/BasketService.cs"
+      ],
+      "why": "Familiarizes you with the testing patterns, MSTest framework, and gRPC service implementation while improving test coverage."
+    },
+    {
+      "title": "Improve error messages in CONTRIBUTING.md",
+      "description": "Expand the contribution guide with common development pitfalls (Docker not running, certificate trust issues, port conflicts) and their solutions.",
+      "difficulty": "beginner",
+      "category": "docs",
+      "files": [
+        "CONTRIBUTING.md",
+        "README.md"
+      ],
+      "why": "Low barrier to entry, helps you understand the developer experience, and makes a real impact for future contributors."
+    },
+    {
+      "title": "Add Playwright test for order placement flow",
+      "description": "Create an e2e test that adds items to basket, proceeds to checkout, and verifies order confirmation. Follow patterns in existing test files.",
+      "difficulty": "intermediate",
+      "category": "test",
+      "files": [
+        "e2e/OrderPlacementTest.spec.ts",
+        "e2e/login.setup.ts"
+      ],
+      "why": "Introduces you to the full user flow, Playwright testing patterns, and how services interact end-to-end."
+    },
+    {
+      "title": "Implement caching for catalog item queries",
+      "description": "Add Redis caching to frequently accessed catalog endpoints. Use IDistributedCache and implement cache invalidation when items are updated.",
+      "difficulty": "intermediate",
+      "category": "feature",
+      "files": [
+        "src/Catalog.API/Apis/CatalogApi.cs",
+        "src/Catalog.API/Program.cs"
+      ],
+      "why": "Teaches performance optimization patterns, distributed caching with Redis, and introduces you to Aspire's Redis integration."
+    },
+    {
+      "title": "Refactor OrderingAPI to use MediatR pipeline behaviors",
+      "description": "Extract cross-cutting concerns (logging, validation) into MediatR pipeline behaviors to reduce duplication in command handlers.",
+      "difficulty": "intermediate",
+      "category": "refactor",
+      "files": [
+        "src/Ordering.API/Application/Commands/",
+        "src/Ordering.API/Program.cs"
+      ],
+      "why": "Demonstrates CQRS and MediatR patterns while improving code quality. Shows how to work with the domain-driven design structure."
+    },
+    {
+      "title": "Add health check for external AI service connectivity",
+      "description": "Implement custom IHealthCheck for Azure OpenAI connection status and integrate with existing health check infrastructure.",
+      "difficulty": "advanced",
+      "category": "feature",
+      "files": [
+        "src/Catalog.API/HealthChecks/",
+        "src/Catalog.API/Program.cs",
+        "src/eShop.ServiceDefaults/Extensions.cs"
+      ],
+      "why": "Dives into observability patterns, custom health checks, and integration with Aspire dashboard. Critical for production readiness."
+    },
+    {
+      "title": "Implement saga pattern for order cancellation",
+      "description": "Create a distributed transaction saga to handle order cancellation across Ordering, Basket, and Payment services using compensating events.",
+      "difficulty": "advanced",
+      "category": "feature",
+      "files": [
+        "src/OrderProcessor/",
+        "src/EventBus/",
+        "src/Ordering.API/IntegrationEvents/"
+      ],
+      "why": "Tackles complex distributed systems challenges, event-driven architecture, and eventual consistency. Showcases real-world microservices patterns."
+    }
+  ],
+  "runbook": {
+    "applicable": true,
+    "deploySteps": [
+      "Ensure Azure subscription is active and Azure Developer CLI (azd) is installed",
+      "Run 'azd auth login' to authenticate",
+      "Execute 'azd init' from repository root and select .NET Aspire project",
+      "Choose services to expose publicly (typically WebApp)",
+      "Run 'azd up' to provision Azure resources and deploy",
+      "Access the application via the URL provided by azd output",
+      "For updates, run 'azd up' again after code changes"
+    ],
+    "observability": [
+      "Aspire Dashboard: Local development access at http://localhost:19888 to view logs, traces, and metrics for all services",
+      "OpenTelemetry: All services emit telemetry (logs, traces, metrics) via OpenTelemetry configured in ServiceDefaults",
+      "Health Checks: Each service exposes /health and /alive endpoints viewable via Aspire dashboard or direct HTTP calls",
+      "Structured Logging: Services use ILogger with structured logging, aggregated logs visible in Aspire dashboard"
+    ],
+    "incidents": [
+      {
+        "name": "Service not starting",
+        "check": "Check Aspire dashboard for service status. Verify Docker containers are running. Check dependency health (Postgres, Redis, RabbitMQ). Review service logs for startup errors."
+      },
+      {
+        "name": "Database connection failures",
+        "check": "Verify Postgres container is healthy. Check connection strings in Aspire configuration. Ensure EF migrations have run (OrderingAPI should run first)."
+      },
+      {
+        "name": "Event bus messages not flowing",
+        "check": "Verify RabbitMQ container is running. Check RabbitMQ management UI (if exposed). Review service logs for subscription errors. Ensure event handlers are registered."
+      },
+      {
+        "name": "Authentication failures",
+        "check": "Verify Identity.API is running and healthy. Check JWT token configuration. Ensure Identity database is seeded. Review CORS settings if calling from browser."
+      },
+      {
+        "name": "High latency or timeouts",
+        "check": "Check Aspire dashboard for slow traces. Review database query performance. Check Redis connectivity. Verify resilience policies (retry, circuit breaker) in ServiceDefaults."
+      }
+    ],
+    "sources": [
+      "README.md",
+      "src/eShop.ServiceDefaults/",
+      "src/eShop.AppHost/Program.cs"
+    ]
+  }
+}

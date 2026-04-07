@@ -1,0 +1,53 @@
+# Diagrams: local/eShop
+
+## Component Architecture
+
+```mermaid
+graph LR
+    A["Catalog.API"]
+    B["Basket.API"]
+    C["Ordering.API"]
+    D["Identity.API"]
+    E["Webhooks.API"]
+    F["WebApp"]
+    G["OrderProcessor & PaymentProcessor"]
+    H["EventBus"]
+    I["ServiceDefaults"]
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+    E --> F
+    F --> G
+    G --> H
+    H --> I
+```
+
+## Directory Structure
+
+```mermaid
+graph TD
+    D0["src/"]
+    D1["src/eShop.AppHost/"]
+    D2["src/Catalog.API/"]
+    D3["src/Basket.API/"]
+    D4["src/Ordering.API/"]
+    D5["src/Identity.API/"]
+    D6["src/WebApp/"]
+    D7["src/EventBus/"]
+    D8["src/EventBusRabbitMQ/"]
+    D9["src/eShop.ServiceDefaults/"]
+    D10["tests/"]
+    D11["e2e/"]
+```
+
+## CI/CD Pipeline
+
+```mermaid
+graph LR
+    A[Push] --> B[CI]
+    B --> C{Tests Pass?}
+    C -->|Yes| D[Build]
+    C -->|No| E[Fix]
+    D --> F[Deploy]
+```

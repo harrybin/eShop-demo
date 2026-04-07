@@ -1,0 +1,138 @@
+# First Tasks: local/eShop
+
+Suggested starter tasks for new contributors, organized by difficulty.
+✨ Welcome to the project! We're excited to have you contribute. Here's how to get started.
+
+> Friendly guidance to help you ship quickly.
+
+## Recommended first tasks
+
+Starter tasks across different areas of the codebase.
+
+
+- **Add health check for external AI service connectivity** (advanced, feature)
+- **Implement saga pattern for order cancellation** (advanced, feature)
+- **Add unit tests for BasketService gRPC endpoints** (beginner, test)
+
+## Beginner Tasks (Safe Small Wins)
+
+### Add unit tests for BasketService gRPC endpoints
+
+**Difficulty:** beginner | **Category:** test
+
+Create comprehensive tests for the basket gRPC service methods (GetBasket, UpdateBasket, DeleteBasket) using NSubstitute mocks.
+
+**Why this matters:** Familiarizes you with the testing patterns, MSTest framework, and gRPC service implementation while improving test coverage.
+
+**Files to look at:**
+- `tests/Basket.UnitTests/BasketServiceTests.cs`
+- `src/Basket.API/Grpc/BasketService.cs`
+
+### Improve error messages in CONTRIBUTING.md
+
+**Difficulty:** beginner | **Category:** docs
+
+Expand the contribution guide with common development pitfalls (Docker not running, certificate trust issues, port conflicts) and their solutions.
+
+**Why this matters:** Low barrier to entry, helps you understand the developer experience, and makes a real impact for future contributors.
+
+**Files to look at:**
+- `CONTRIBUTING.md`
+- `README.md`
+
+### Add product filtering by price range
+
+**Difficulty:** beginner | **Category:** feature
+
+Extend the Catalog API to accept min/max price query parameters and filter results. Update the CatalogApi.cs GetAllItems endpoint.
+
+**Why this matters:** Great first feature that introduces you to minimal APIs, query parameter binding, and EF Core queries without touching complex business logic.
+
+**Files to look at:**
+- `src/Catalog.API/Apis/CatalogApi.cs`
+
+
+## Intermediate Tasks
+
+### Add Playwright test for order placement flow
+
+**Difficulty:** intermediate | **Category:** test
+
+Create an e2e test that adds items to basket, proceeds to checkout, and verifies order confirmation. Follow patterns in existing test files.
+
+**Why this matters:** Introduces you to the full user flow, Playwright testing patterns, and how services interact end-to-end.
+
+**Files to look at:**
+- `e2e/OrderPlacementTest.spec.ts`
+- `e2e/login.setup.ts`
+
+### Implement caching for catalog item queries
+
+**Difficulty:** intermediate | **Category:** feature
+
+Add Redis caching to frequently accessed catalog endpoints. Use IDistributedCache and implement cache invalidation when items are updated.
+
+**Why this matters:** Teaches performance optimization patterns, distributed caching with Redis, and introduces you to Aspire's Redis integration.
+
+**Files to look at:**
+- `src/Catalog.API/Apis/CatalogApi.cs`
+- `src/Catalog.API/Program.cs`
+
+### Refactor OrderingAPI to use MediatR pipeline behaviors
+
+**Difficulty:** intermediate | **Category:** refactor
+
+Extract cross-cutting concerns (logging, validation) into MediatR pipeline behaviors to reduce duplication in command handlers.
+
+**Why this matters:** Demonstrates CQRS and MediatR patterns while improving code quality. Shows how to work with the domain-driven design structure.
+
+**Files to look at:**
+- `src/Ordering.API/Application/Commands/`
+- `src/Ordering.API/Program.cs`
+
+
+## Advanced Tasks
+
+### Add health check for external AI service connectivity
+
+**Difficulty:** advanced | **Category:** feature
+
+Implement custom IHealthCheck for Azure OpenAI connection status and integrate with existing health check infrastructure.
+
+**Why this matters:** Dives into observability patterns, custom health checks, and integration with Aspire dashboard. Critical for production readiness.
+
+**Files to look at:**
+- `src/Catalog.API/HealthChecks/`
+- `src/Catalog.API/Program.cs`
+- `src/eShop.ServiceDefaults/Extensions.cs`
+
+### Implement saga pattern for order cancellation
+
+**Difficulty:** advanced | **Category:** feature
+
+Create a distributed transaction saga to handle order cancellation across Ordering, Basket, and Payment services using compensating events.
+
+**Why this matters:** Tackles complex distributed systems challenges, event-driven architecture, and eventual consistency. Showcases real-world microservices patterns.
+
+**Files to look at:**
+- `src/OrderProcessor/`
+- `src/EventBus/`
+- `src/Ordering.API/IntegrationEvents/`
+
+
+## How to Pick a Task
+
+1. **New to the codebase?** Start with a beginner task
+2. **Want to learn the architecture?** Pick an intermediate refactor
+3. **Ready for a challenge?** Try an advanced feature task
+
+## Before You Start
+
+1. Read [ARCHITECTURE.md](./ARCHITECTURE.md) to understand the system
+2. Check if there's an existing issue for the task
+3. Create a feature branch
+4. Write tests for your changes
+5. Submit a PR referencing this task
+
+---
+*Generated by [Repo Bootcamp](https://github.com/repo-bootcamp)*
