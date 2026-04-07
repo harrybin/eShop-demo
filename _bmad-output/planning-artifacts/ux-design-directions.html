@@ -1,0 +1,474 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>eShop UX Design Directions</title>
+    <style>
+        :root {
+            --bg: #f5f6f8;
+            --panel: #ffffff;
+            --ink: #1d232f;
+            --muted: #5f6777;
+            --line: #d9dce3;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--ink);
+            background: linear-gradient(160deg, #f8fafc 0%, #eef2f7 100%);
+        }
+
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 5;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(6px);
+            border-bottom: 1px solid var(--line);
+            padding: 14px 20px;
+        }
+
+        header h1 {
+            margin: 0 0 4px 0;
+            font-size: 20px;
+        }
+
+        header p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 16px;
+            padding: 16px;
+        }
+
+        .card {
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            overflow: hidden;
+            background: var(--panel);
+            box-shadow: 0 12px 30px rgba(13, 27, 45, 0.08);
+        }
+
+        .meta {
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--line);
+            background: #fcfcfd;
+        }
+
+        .meta h2 {
+            margin: 0;
+            font-size: 15px;
+        }
+
+        .meta p {
+            margin: 4px 0 0 0;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .mockup {
+            height: 260px;
+            padding: 14px;
+            display: grid;
+            gap: 10px;
+            transition: transform .2s ease;
+        }
+
+        .card:hover .mockup {
+            transform: translateY(-2px);
+        }
+
+        .top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .title {
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .chip {
+            border-radius: 999px;
+            padding: 4px 10px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .hero {
+            border-radius: 12px;
+            padding: 10px;
+            min-height: 64px;
+        }
+
+        .rows {
+            display: grid;
+            gap: 8px;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .line {
+            height: 10px;
+            border-radius: 6px;
+        }
+
+        .btn {
+            border: 0;
+            border-radius: 10px;
+            padding: 6px 10px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .d1 {
+            background: #fbf8f5;
+            color: #2e2a26;
+        }
+
+        .d1 .hero {
+            background: #f1e8df;
+        }
+
+        .d1 .chip {
+            background: #315d87;
+            color: #fff;
+        }
+
+        .d1 .line {
+            background: #d7ccc2;
+        }
+
+        .d1 .btn {
+            background: #315d87;
+            color: #fff;
+        }
+
+        .d2 {
+            background: #f7fbf9;
+            color: #153229;
+        }
+
+        .d2 .hero {
+            background: #dff3ea;
+        }
+
+        .d2 .chip {
+            background: #2d8a66;
+            color: #fff;
+        }
+
+        .d2 .line {
+            background: #c3e8d8;
+        }
+
+        .d2 .btn {
+            background: #2d8a66;
+            color: #fff;
+        }
+
+        .d3 {
+            background: #f8f7fc;
+            color: #1f1d32;
+        }
+
+        .d3 .hero {
+            background: #e8e3fb;
+        }
+
+        .d3 .chip {
+            background: #4f5ac8;
+            color: #fff;
+        }
+
+        .d3 .line {
+            background: #d8d1f7;
+        }
+
+        .d3 .btn {
+            background: #4f5ac8;
+            color: #fff;
+        }
+
+        .d4 {
+            background: #fff8f3;
+            color: #332015;
+        }
+
+        .d4 .hero {
+            background: #ffe7d4;
+        }
+
+        .d4 .chip {
+            background: #cc6f35;
+            color: #fff;
+        }
+
+        .d4 .line {
+            background: #ffd5b6;
+        }
+
+        .d4 .btn {
+            background: #cc6f35;
+            color: #fff;
+        }
+
+        .d5 {
+            background: #f5f8fb;
+            color: #18293a;
+        }
+
+        .d5 .hero {
+            background: #dceaf9;
+        }
+
+        .d5 .chip {
+            background: #2b6ea8;
+            color: #fff;
+        }
+
+        .d5 .line {
+            background: #c5dcf4;
+        }
+
+        .d5 .btn {
+            background: #2b6ea8;
+            color: #fff;
+        }
+
+        .d6 {
+            background: #f8f8f8;
+            color: #212121;
+        }
+
+        .d6 .hero {
+            background: #ececec;
+        }
+
+        .d6 .chip {
+            background: #4b4b4b;
+            color: #fff;
+        }
+
+        .d6 .line {
+            background: #dbdbdb;
+        }
+
+        .d6 .btn {
+            background: #4b4b4b;
+            color: #fff;
+        }
+
+        .d7 {
+            background: #f9fbf6;
+            color: #1f2d1b;
+        }
+
+        .d7 .hero {
+            background: #e7f2da;
+        }
+
+        .d7 .chip {
+            background: #5b8c3b;
+            color: #fff;
+        }
+
+        .d7 .line {
+            background: #d6e8c2;
+        }
+
+        .d7 .btn {
+            background: #5b8c3b;
+            color: #fff;
+        }
+
+        .d8 {
+            background: #fff6f8;
+            color: #351d26;
+        }
+
+        .d8 .hero {
+            background: #ffdce6;
+        }
+
+        .d8 .chip {
+            background: #b5436e;
+            color: #fff;
+        }
+
+        .d8 .line {
+            background: #f9c5d6;
+        }
+
+        .d8 .btn {
+            background: #b5436e;
+            color: #fff;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>eShop Design Direction Showcase</h1>
+        <p>8 visual directions for compare-and-select during UX Step 9.</p>
+    </header>
+    <main class="grid">
+        <section class="card">
+            <div class="meta">
+                <h2>Direction 1: Trust Ledger</h2>
+                <p>Dense transactional clarity</p>
+            </div>
+            <div class="mockup d1">
+                <div class="top"><span class="title">Checkout Status</span><span class="chip">Pending</span></div>
+                <div class="hero">Progress timeline with explicit state labels and next step guidance.</div>
+                <div class="rows">
+                    <div class="row">
+                        <div class="line"></div><button class="btn">Continue</button>
+                    </div>
+                    <div class="line"></div>
+                    <div class="line"></div>
+                </div>
+            </div>
+        </section>
+        <section class="card">
+            <div class="meta">
+                <h2>Direction 2: Calm Commerce</h2>
+                <p>Soft confidence and low-stress actions</p>
+            </div>
+            <div class="mockup d2">
+                <div class="top"><span class="title">Basket Review</span><span class="chip">Ready</span></div>
+                <div class="hero">Airy spacing, high trust cues, and clear validation language.</div>
+                <div class="rows">
+                    <div class="row">
+                        <div class="line"></div><button class="btn">Checkout</button>
+                    </div>
+                    <div class="line"></div>
+                    <div class="line"></div>
+                </div>
+            </div>
+        </section>
+        <section class="card">
+            <div class="meta">
+                <h2>Direction 3: Guided Steps</h2>
+                <p>Strong progression framing</p>
+            </div>
+            <div class="mockup d3">
+                <div class="top"><span class="title">Step 2 of 4</span><span class="chip">In Flow</span></div>
+                <div class="hero">Wizard-like checkout with explicit milestones and recovery actions.</div>
+                <div class="rows">
+                    <div class="row">
+                        <div class="line"></div><button class="btn">Next</button>
+                    </div>
+                    <div class="line"></div>
+                    <div class="line"></div>
+                </div>
+            </div>
+        </section>
+        <section class="card">
+            <div class="meta">
+                <h2>Direction 4: Retail Warmth</h2>
+                <p>Human tone with conversion focus</p>
+            </div>
+            <div class="mockup d4">
+                <div class="top"><span class="title">Order Summary</span><span class="chip">Review</span></div>
+                <div class="hero">Friendly product-first visuals with clear payment confidence cues.</div>
+                <div class="rows">
+                    <div class="row">
+                        <div class="line"></div><button class="btn">Place Order</button>
+                    </div>
+                    <div class="line"></div>
+                    <div class="line"></div>
+                </div>
+            </div>
+        </section>
+        <section class="card">
+            <div class="meta">
+                <h2>Direction 5: Operator Clear</h2>
+                <p>Diagnostic-friendly and precise</p>
+            </div>
+            <div class="mockup d5">
+                <div class="top"><span class="title">Order Timeline</span><span class="chip">Stock Confirmed</span>
+                </div>
+                <div class="hero">Balanced shopper clarity with subtle technical observability hooks.</div>
+                <div class="rows">
+                    <div class="row">
+                        <div class="line"></div><button class="btn">Track</button>
+                    </div>
+                    <div class="line"></div>
+                    <div class="line"></div>
+                </div>
+            </div>
+        </section>
+        <section class="card">
+            <div class="meta">
+                <h2>Direction 6: Monochrome Focus</h2>
+                <p>Minimal and fast-scanning</p>
+            </div>
+            <div class="mockup d6">
+                <div class="top"><span class="title">Cart Actions</span><span class="chip">Stable</span></div>
+                <div class="hero">Low-color baseline where semantic accents carry state meaning.</div>
+                <div class="rows">
+                    <div class="row">
+                        <div class="line"></div><button class="btn">Update</button>
+                    </div>
+                    <div class="line"></div>
+                    <div class="line"></div>
+                </div>
+            </div>
+        </section>
+        <section class="card">
+            <div class="meta">
+                <h2>Direction 7: Milestone Green</h2>
+                <p>Progress and completion centric</p>
+            </div>
+            <div class="mockup d7">
+                <div class="top"><span class="title">Delivery Path</span><span class="chip">On Track</span></div>
+                <div class="hero">Status-driven hierarchy emphasizing successful progression states.</div>
+                <div class="rows">
+                    <div class="row">
+                        <div class="line"></div><button class="btn">View Status</button>
+                    </div>
+                    <div class="line"></div>
+                    <div class="line"></div>
+                </div>
+            </div>
+        </section>
+        <section class="card">
+            <div class="meta">
+                <h2>Direction 8: Momentum Rose</h2>
+                <p>Expressive but structured</p>
+            </div>
+            <div class="mockup d8">
+                <div class="top"><span class="title">Confirm & Proceed</span><span class="chip">Action</span></div>
+                <div class="hero">Stronger accent energy for CTA emphasis with clear state continuity.</div>
+                <div class="rows">
+                    <div class="row">
+                        <div class="line"></div><button class="btn">Confirm</button>
+                    </div>
+                    <div class="line"></div>
+                    <div class="line"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+</body>
+
+</html>

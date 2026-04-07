@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>eShop UX Color Themes</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: "Segoe UI", Tahoma, sans-serif;
+            background: #f3f5f8;
+            color: #1f2937;
+        }
+
+        header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #d5dbe3;
+            background: #fff;
+            position: sticky;
+            top: 0;
+        }
+
+        h1 {
+            margin: 0 0 4px 0;
+            font-size: 20px;
+        }
+
+        p {
+            margin: 0;
+            color: #5b6474;
+            font-size: 13px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 14px;
+            padding: 14px;
+        }
+
+        .card {
+            border: 1px solid #d5dbe3;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #fff;
+        }
+
+        .head {
+            padding: 10px 12px;
+            font-size: 14px;
+            font-weight: 700;
+            border-bottom: 1px solid #e5e9ef;
+        }
+
+        .palette {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+        }
+
+        .swatch {
+            height: 70px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            font-size: 11px;
+            color: #fff;
+            padding: 4px;
+        }
+
+        .demo {
+            padding: 12px;
+            display: grid;
+            gap: 8px;
+        }
+
+        .btn {
+            display: inline-block;
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .chip {
+            display: inline-block;
+            border-radius: 999px;
+            padding: 3px 8px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #fff;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>eShop Color Theme Visualizer</h1>
+        <p>Semantic theme options for confidence-first commerce UX.</p>
+    </header>
+    <main class="grid">
+        <section class="card">
+            <div class="head">Theme A: Operator Calm</div>
+            <div class="palette">
+                <div class="swatch" style="background:#2b6ea8">Primary</div>
+                <div class="swatch" style="background:#6b7280">Secondary</div>
+                <div class="swatch" style="background:#2f855a">Success</div>
+                <div class="swatch" style="background:#b7791f">Warning</div>
+                <div class="swatch" style="background:#c53030">Error</div>
+            </div>
+            <div class="demo"><span class="btn" style="background:#2b6ea8">Continue</span><span class="chip"
+                    style="background:#2f855a">Confirmed</span><span class="chip"
+                    style="background:#b7791f">Pending</span></div>
+        </section>
+        <section class="card">
+            <div class="head">Theme B: Retail Warm</div>
+            <div class="palette">
+                <div class="swatch" style="background:#c05621">Primary</div>
+                <div class="swatch" style="background:#718096">Secondary</div>
+                <div class="swatch" style="background:#2f855a">Success</div>
+                <div class="swatch" style="background:#b7791f">Warning</div>
+                <div class="swatch" style="background:#c53030">Error</div>
+            </div>
+            <div class="demo"><span class="btn" style="background:#c05621">Checkout</span><span class="chip"
+                    style="background:#2f855a">In Stock</span><span class="chip" style="background:#c53030">Needs
+                    Action</span></div>
+        </section>
+        <section class="card">
+            <div class="head">Theme C: Milestone Green</div>
+            <div class="palette">
+                <div class="swatch" style="background:#2f855a">Primary</div>
+                <div class="swatch" style="background:#64748b">Secondary</div>
+                <div class="swatch" style="background:#276749">Success</div>
+                <div class="swatch" style="background:#b7791f">Warning</div>
+                <div class="swatch" style="background:#c53030">Error</div>
+            </div>
+            <div class="demo"><span class="btn" style="background:#2f855a">Track Order</span><span class="chip"
+                    style="background:#276749">Delivered</span><span class="chip"
+                    style="background:#b7791f">Processing</span></div>
+        </section>
+        <section class="card">
+            <div class="head">Theme D: Neutral Technical</div>
+            <div class="palette">
+                <div class="swatch" style="background:#4a5568">Primary</div>
+                <div class="swatch" style="background:#718096">Secondary</div>
+                <div class="swatch" style="background:#2f855a">Success</div>
+                <div class="swatch" style="background:#b7791f">Warning</div>
+                <div class="swatch" style="background:#c53030">Error</div>
+            </div>
+            <div class="demo"><span class="btn" style="background:#4a5568">Submit</span><span class="chip"
+                    style="background:#2f855a">Complete</span><span class="chip"
+                    style="background:#c53030">Failed</span></div>
+        </section>
+    </main>
+</body>
+
+</html>
