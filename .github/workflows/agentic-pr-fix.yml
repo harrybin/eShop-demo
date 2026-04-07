@@ -1,246 +1,246 @@
 name: Agentic PR Fix
 
 on:
-  workflow_run:
-    workflows:
-      - eShop Pull Request Validation
-      - eShop Pull Request Validation - .NET MAUI
-      - Build And Test All On Push
-    types:
-      - completed
-  workflow_dispatch:
-    inputs:
-      run_id:
-        description: "Failed workflow run id to analyze"
-        required: true
-        type: string
+    workflow_run:
+        workflows:
+            - eShop Pull Request Validation
+            - eShop Pull Request Validation - .NET MAUI
+            - Build And Test All On Push
+        types:
+            - completed
+    workflow_dispatch:
+        inputs:
+            run_id:
+                description: "Failed workflow run id to analyze"
+                required: true
+                type: string
 
 permissions:
-  actions: read
-  contents: read
-  issues: write
-  pull-requests: write
+    actions: read
+    contents: read
+    issues: write
+    pull-requests: write
 
 jobs:
-  fix-pr-failure:
-    name: Create agentic PR fix task
-    runs-on: ubuntu-latest
-    if: ${{ (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'failure') || github.event_name == 'workflow_dispatch' }}
-    concurrency:
-      group: agentic-pr-fix-${{ github.event.workflow_run.id || inputs.run_id }}
-      cancel-in-progress: false
-    steps:
-      - name: Resolve target run and PR context
-        id: context
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const isManual = context.eventName === 'workflow_dispatch';
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
+    fix-pr-failure:
+        name: Create agentic PR fix task
+        runs-on: ubuntu-latest
+        if: ${{ (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'failure') || github.event_name == 'workflow_dispatch' }}
+        concurrency:
+            group: agentic-pr-fix-${{ github.event.workflow_run.id || inputs.run_id }}
+            cancel-in-progress: false
+        steps:
+            - name: Resolve target run and PR context
+              id: context
+              uses: actions/github-script@v7
+              with:
+                  script: |
+                      const isManual = context.eventName === 'workflow_dispatch';
+                      const owner = context.repo.owner;
+                      const repo = context.repo.repo;
 
-            let runId;
-            if (isManual) {
-              runId = Number(core.getInput('run_id'));
-              if (!runId || Number.isNaN(runId)) {
-                core.setFailed('workflow_dispatch requires a numeric run_id input.');
-                return;
-              }
-            } else {
-              runId = context.payload.workflow_run.id;
-            }
+                      let runId;
+                      if (isManual) {
+                        runId = Number(core.getInput('run_id'));
+                        if (!runId || Number.isNaN(runId)) {
+                          core.setFailed('workflow_dispatch requires a numeric run_id input.');
+                          return;
+                        }
+                      } else {
+                        runId = context.payload.workflow_run.id;
+                      }
 
-            const { data: run } = await github.rest.actions.getWorkflowRun({
-              owner,
-              repo,
-              run_id: runId
-            });
+                      const { data: run } = await github.rest.actions.getWorkflowRun({
+                        owner,
+                        repo,
+                        run_id: runId
+                      });
 
-            if (run.conclusion !== 'failure') {
-              core.notice(`Run ${runId} is not failed (conclusion: ${run.conclusion}). Nothing to do.`);
-              core.setOutput('should_continue', 'false');
-              return;
-            }
+                      if (run.conclusion !== 'failure') {
+                        core.notice(`Run ${runId} is not failed (conclusion: ${run.conclusion}). Nothing to do.`);
+                        core.setOutput('should_continue', 'false');
+                        return;
+                      }
 
-            const pr = Array.isArray(run.pull_requests) && run.pull_requests.length > 0
-              ? run.pull_requests[0]
-              : null;
+                      const pr = Array.isArray(run.pull_requests) && run.pull_requests.length > 0
+                        ? run.pull_requests[0]
+                        : null;
 
-            if (!pr?.number) {
-              core.notice(`Run ${runId} is not associated with a pull request. Skipping.`);
-              core.setOutput('should_continue', 'false');
-              return;
-            }
+                      if (!pr?.number) {
+                        core.notice(`Run ${runId} is not associated with a pull request. Skipping.`);
+                        core.setOutput('should_continue', 'false');
+                        return;
+                      }
 
-            core.setOutput('should_continue', 'true');
-            core.setOutput('run_id', String(run.id));
-            core.setOutput('run_number', String(run.run_number));
-            core.setOutput('run_attempt', String(run.run_attempt));
-            core.setOutput('run_url', run.html_url);
-            core.setOutput('workflow_name', run.name || 'Unknown Workflow');
-            core.setOutput('head_sha', run.head_sha);
-            core.setOutput('pr_number', String(pr.number));
+                      core.setOutput('should_continue', 'true');
+                      core.setOutput('run_id', String(run.id));
+                      core.setOutput('run_number', String(run.run_number));
+                      core.setOutput('run_attempt', String(run.run_attempt));
+                      core.setOutput('run_url', run.html_url);
+                      core.setOutput('workflow_name', run.name || 'Unknown Workflow');
+                      core.setOutput('head_sha', run.head_sha);
+                      core.setOutput('pr_number', String(pr.number));
 
-      - name: Collect failing jobs
-        id: jobs
-        if: steps.context.outputs.should_continue == 'true'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
-            const runId = Number('${{ steps.context.outputs.run_id }}');
+            - name: Collect failing jobs
+              id: jobs
+              if: steps.context.outputs.should_continue == 'true'
+              uses: actions/github-script@v7
+              with:
+                  script: |
+                      const owner = context.repo.owner;
+                      const repo = context.repo.repo;
+                      const runId = Number('${{ steps.context.outputs.run_id }}');
 
-            const jobs = await github.paginate(github.rest.actions.listJobsForWorkflowRun, {
-              owner,
-              repo,
-              run_id: runId,
-              per_page: 100
-            });
+                      const jobs = await github.paginate(github.rest.actions.listJobsForWorkflowRun, {
+                        owner,
+                        repo,
+                        run_id: runId,
+                        per_page: 100
+                      });
 
-            const failed = jobs.filter(job => job.conclusion === 'failure');
-            if (failed.length === 0) {
-              core.setOutput('failed_jobs_markdown', '- No failed jobs were found, but the workflow concluded as failure.');
-              return;
-            }
+                      const failed = jobs.filter(job => job.conclusion === 'failure');
+                      if (failed.length === 0) {
+                        core.setOutput('failed_jobs_markdown', '- No failed jobs were found, but the workflow concluded as failure.');
+                        return;
+                      }
 
-            const lines = failed.slice(0, 20).map(job => {
-              const url = job.html_url || `https://github.com/${owner}/${repo}/actions/runs/${runId}`;
-              return `- [${job.name}](${url}) (runner: ${job.runner_name || 'unknown'})`;
-            });
+                      const lines = failed.slice(0, 20).map(job => {
+                        const url = job.html_url || `https://github.com/${owner}/${repo}/actions/runs/${runId}`;
+                        return `- [${job.name}](${url}) (runner: ${job.runner_name || 'unknown'})`;
+                      });
 
-            core.setOutput('failed_jobs_markdown', lines.join('\n'));
+                      core.setOutput('failed_jobs_markdown', lines.join('\n'));
 
-      - name: Create or update fix issue
-        id: issue
-        if: steps.context.outputs.should_continue == 'true'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
-            const prNumber = Number('${{ steps.context.outputs.pr_number }}');
-            const runId = '${{ steps.context.outputs.run_id }}';
-            const runNumber = '${{ steps.context.outputs.run_number }}';
-            const runAttempt = '${{ steps.context.outputs.run_attempt }}';
-            const runUrl = '${{ steps.context.outputs.run_url }}';
-            const workflowName = '${{ steps.context.outputs.workflow_name }}';
-            const headSha = '${{ steps.context.outputs.head_sha }}';
-            const failedJobs = `${{ steps.jobs.outputs.failed_jobs_markdown }}`;
-            const title = `[pr-fix] PR #${prNumber} failed checks in ${workflowName}`;
+            - name: Create or update fix issue
+              id: issue
+              if: steps.context.outputs.should_continue == 'true'
+              uses: actions/github-script@v7
+              with:
+                  script: |
+                      const owner = context.repo.owner;
+                      const repo = context.repo.repo;
+                      const prNumber = Number('${{ steps.context.outputs.pr_number }}');
+                      const runId = '${{ steps.context.outputs.run_id }}';
+                      const runNumber = '${{ steps.context.outputs.run_number }}';
+                      const runAttempt = '${{ steps.context.outputs.run_attempt }}';
+                      const runUrl = '${{ steps.context.outputs.run_url }}';
+                      const workflowName = '${{ steps.context.outputs.workflow_name }}';
+                      const headSha = '${{ steps.context.outputs.head_sha }}';
+                      const failedJobs = `${{ steps.jobs.outputs.failed_jobs_markdown }}`;
+                      const title = `[pr-fix] PR #${prNumber} failed checks in ${workflowName}`;
 
-            const body = [
-              '## Agentic PR Failure Fix Task',
-              '',
-              `A monitored workflow failed for PR #${prNumber}.`,
-              '',
-              `- Workflow: **${workflowName}**`,
-              `- Run: [#${runNumber} (attempt ${runAttempt})](${runUrl})`,
-              `- Run ID: \`${runId}\``,
-              `- Head SHA: \`${headSha}\``,
-              '',
-              '### Failed Jobs',
-              failedJobs,
-              '',
-              '### Required Outcome',
-              '1. Reproduce and diagnose the failure from the linked run logs.',
-              '2. Implement a minimal fix in the PR branch.',
-              '3. Run relevant build/tests locally in CI environment.',
-              '4. Push fix and summarize root cause + changes in a PR comment.',
-              '',
-              `Linked PR: #${prNumber}`
-            ].join('\n');
+                      const body = [
+                        '## Agentic PR Failure Fix Task',
+                        '',
+                        `A monitored workflow failed for PR #${prNumber}.`,
+                        '',
+                        `- Workflow: **${workflowName}**`,
+                        `- Run: [#${runNumber} (attempt ${runAttempt})](${runUrl})`,
+                        `- Run ID: \`${runId}\``,
+                        `- Head SHA: \`${headSha}\``,
+                        '',
+                        '### Failed Jobs',
+                        failedJobs,
+                        '',
+                        '### Required Outcome',
+                        '1. Reproduce and diagnose the failure from the linked run logs.',
+                        '2. Implement a minimal fix in the PR branch.',
+                        '3. Run relevant build/tests locally in CI environment.',
+                        '4. Push fix and summarize root cause + changes in a PR comment.',
+                        '',
+                        `Linked PR: #${prNumber}`
+                      ].join('\n');
 
-            const query = `repo:${owner}/${repo} is:issue is:open in:title "[pr-fix] PR #${prNumber} failed checks"`;
-            const { data: search } = await github.rest.search.issuesAndPullRequests({
-              q: query,
-              per_page: 1
-            });
+                      const query = `repo:${owner}/${repo} is:issue is:open in:title "[pr-fix] PR #${prNumber} failed checks"`;
+                      const { data: search } = await github.rest.search.issuesAndPullRequests({
+                        q: query,
+                        per_page: 1
+                      });
 
-            let issueNumber;
-            if (search.items.length > 0) {
-              issueNumber = search.items[0].number;
-              await github.rest.issues.update({
-                owner,
-                repo,
-                issue_number: issueNumber,
-                title,
-                body
-              });
-              core.notice(`Updated existing issue #${issueNumber}`);
-            } else {
-              const { data: created } = await github.rest.issues.create({
-                owner,
-                repo,
-                title,
-                body
-              });
-              issueNumber = created.number;
-              core.notice(`Created issue #${issueNumber}`);
-            }
+                      let issueNumber;
+                      if (search.items.length > 0) {
+                        issueNumber = search.items[0].number;
+                        await github.rest.issues.update({
+                          owner,
+                          repo,
+                          issue_number: issueNumber,
+                          title,
+                          body
+                        });
+                        core.notice(`Updated existing issue #${issueNumber}`);
+                      } else {
+                        const { data: created } = await github.rest.issues.create({
+                          owner,
+                          repo,
+                          title,
+                          body
+                        });
+                        issueNumber = created.number;
+                        core.notice(`Created issue #${issueNumber}`);
+                      }
 
-            try {
-              await github.rest.issues.addAssignees({
-                owner,
-                repo,
-                issue_number: issueNumber,
-                assignees: ['copilot']
-              });
-            } catch (e) {
-              core.notice(`Could not assign issue #${issueNumber} to copilot: ${e.message}`);
-            }
+                      try {
+                        await github.rest.issues.addAssignees({
+                          owner,
+                          repo,
+                          issue_number: issueNumber,
+                          assignees: ['copilot']
+                        });
+                      } catch (e) {
+                        core.notice(`Could not assign issue #${issueNumber} to copilot: ${e.message}`);
+                      }
 
-            core.setOutput('issue_number', String(issueNumber));
-            core.setOutput('issue_url', `https://github.com/${owner}/${repo}/issues/${issueNumber}`);
+                      core.setOutput('issue_number', String(issueNumber));
+                      core.setOutput('issue_url', `https://github.com/${owner}/${repo}/issues/${issueNumber}`);
 
-      - name: Comment on pull request
-        if: steps.context.outputs.should_continue == 'true'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
-            const prNumber = Number('${{ steps.context.outputs.pr_number }}');
-            const runUrl = '${{ steps.context.outputs.run_url }}';
-            const issueNumber = '${{ steps.issue.outputs.issue_number }}';
-            const issueUrl = '${{ steps.issue.outputs.issue_url }}';
-            const failedJobs = `${{ steps.jobs.outputs.failed_jobs_markdown }}`;
+            - name: Comment on pull request
+              if: steps.context.outputs.should_continue == 'true'
+              uses: actions/github-script@v7
+              with:
+                  script: |
+                      const owner = context.repo.owner;
+                      const repo = context.repo.repo;
+                      const prNumber = Number('${{ steps.context.outputs.pr_number }}');
+                      const runUrl = '${{ steps.context.outputs.run_url }}';
+                      const issueNumber = '${{ steps.issue.outputs.issue_number }}';
+                      const issueUrl = '${{ steps.issue.outputs.issue_url }}';
+                      const failedJobs = `${{ steps.jobs.outputs.failed_jobs_markdown }}`;
 
-            const marker = '<!-- agentic-pr-fix-comment -->';
-            const body = [
-              marker,
-              '## Agentic PR Fix Triggered',
-              '',
-              `A failed CI run was detected: ${runUrl}`,
-              '',
-              `- Tracking issue: #${issueNumber} (${issueUrl})`,
-              '',
-              '### Failed Jobs',
-              failedJobs,
-              '',
-              'If Copilot coding agent is enabled for this repository, it can pick up this issue and propose a fix back to the PR branch.'
-            ].join('\n');
+                      const marker = '<!-- agentic-pr-fix-comment -->';
+                      const body = [
+                        marker,
+                        '## Agentic PR Fix Triggered',
+                        '',
+                        `A failed CI run was detected: ${runUrl}`,
+                        '',
+                        `- Tracking issue: #${issueNumber} (${issueUrl})`,
+                        '',
+                        '### Failed Jobs',
+                        failedJobs,
+                        '',
+                        'If Copilot coding agent is enabled for this repository, it can pick up this issue and propose a fix back to the PR branch.'
+                      ].join('\n');
 
-            const comments = await github.paginate(github.rest.issues.listComments, {
-              owner,
-              repo,
-              issue_number: prNumber,
-              per_page: 100
-            });
+                      const comments = await github.paginate(github.rest.issues.listComments, {
+                        owner,
+                        repo,
+                        issue_number: prNumber,
+                        per_page: 100
+                      });
 
-            const existing = comments.find(c => c.user?.type === 'Bot' && c.body?.includes(marker));
-            if (existing) {
-              await github.rest.issues.updateComment({
-                owner,
-                repo,
-                comment_id: existing.id,
-                body
-              });
-            } else {
-              await github.rest.issues.createComment({
-                owner,
-                repo,
-                issue_number: prNumber,
-                body
-              });
-            }
+                      const existing = comments.find(c => c.user?.type === 'Bot' && c.body?.includes(marker));
+                      if (existing) {
+                        await github.rest.issues.updateComment({
+                          owner,
+                          repo,
+                          comment_id: existing.id,
+                          body
+                        });
+                      } else {
+                        await github.rest.issues.createComment({
+                          owner,
+                          repo,
+                          issue_number: prNumber,
+                          body
+                        });
+                      }
