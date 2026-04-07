@@ -1,0 +1,15 @@
+{
+	"github": {
+		"provider": "github",
+		"owner": "harrybin",
+		"repo": "eShop-demo",
+		"token": "<your gh token for accessing issues and project>",
+		"project": {
+			"id": "PVT_kwHOAPIkTs4BTjDG",
+			"title": "eShop-demo BMAD Board",
+			"url": "https://github.com/users/harrybin/projects/3"
+		},
+		"mode": "issues",
+		"connectedAt": "2026-04-02T16:26:08.070Z"
+	}
+}
