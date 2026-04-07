@@ -3,6 +3,61 @@ require("dotenv").config({ path: "./.env" });
 import path from 'path';
 
 export const STORAGE_STATE = path.join(__dirname, 'playwright/.auth/user.json');
+const isCI = !!process.env.CI;
+
+const baseProjects = [
+  {
+    name: 'setup',
+    testMatch: '**/*.setup.ts',
+  },
+  {
+    name: 'e2e tests logged in',
+    testMatch: ['**/AddItemTest.spec.ts', '**/RemoveItemTest.spec.ts'],
+    dependencies: ['setup'],
+    use: {
+      storageState: STORAGE_STATE,
+    },
+  },
+  {
+    name: 'e2e tests without logged in',
+    testMatch: ['**/BrowseItemTest.spec.ts', '**/CheckoutFlowTest.spec.ts', '**/SessionPersistenceTest.spec.ts'],
+  },
+];
+
+const ciBrowserProjects = [
+  {
+    name: 'e2e tests logged in firefox',
+    testMatch: ['**/AddItemTest.spec.ts', '**/RemoveItemTest.spec.ts'],
+    dependencies: ['setup'],
+    use: {
+      ...devices['Desktop Firefox'],
+      storageState: STORAGE_STATE,
+    },
+  },
+  {
+    name: 'e2e tests without logged in firefox',
+    testMatch: ['**/BrowseItemTest.spec.ts', '**/CheckoutFlowTest.spec.ts', '**/SessionPersistenceTest.spec.ts'],
+    use: {
+      ...devices['Desktop Firefox'],
+    },
+  },
+  {
+    name: 'e2e tests logged in webkit',
+    testMatch: ['**/AddItemTest.spec.ts', '**/RemoveItemTest.spec.ts'],
+    dependencies: ['setup'],
+    use: {
+      ...devices['Desktop Safari'],
+      storageState: STORAGE_STATE,
+    },
+  },
+  {
+    name: 'e2e tests without logged in webkit',
+    testMatch: ['**/BrowseItemTest.spec.ts', '**/CheckoutFlowTest.spec.ts', '**/SessionPersistenceTest.spec.ts'],
+    use: {
+      ...devices['Desktop Safari'],
+    },
+  },
+];
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -31,22 +86,8 @@ export default defineConfig({
 
   /* Configure projects for major browsers */
   projects: [
-    {
-      name: 'setup',
-      testMatch: '**/*.setup.ts',
-    },
-    {
-      name: 'e2e tests logged in',
-      testMatch: ['**/AddItemTest.spec.ts', '**/RemoveItemTest.spec.ts'],
-      dependencies: ['setup'],
-      use: {
-        storageState: STORAGE_STATE,
-      },
-    },
-    {
-      name: 'e2e tests without logged in',
-      testMatch: ['**/BrowseItemTest.spec.ts'],
-    }
+    ...baseProjects,
+    ...(isCI ? ciBrowserProjects : []),
     // {
     //   name: 'chromium',
     //   use: { ...devices['Desktop Chrome'] },

@@ -9,6 +9,11 @@ public class OrderingService(HttpClient httpClient)
         return httpClient.GetFromJsonAsync<OrderRecord[]>(remoteServiceBaseUrl)!;
     }
 
+    public Task<OrderDetailsRecord?> GetOrder(int orderNumber)
+    {
+        return httpClient.GetFromJsonAsync<OrderDetailsRecord?>($"{remoteServiceBaseUrl}{orderNumber}");
+    }
+
     public Task CreateOrder(CreateOrderRequest request, Guid requestId)
     {
         var requestMessage = new HttpRequestMessage(HttpMethod.Post, remoteServiceBaseUrl);

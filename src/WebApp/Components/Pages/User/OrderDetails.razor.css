@@ -1,0 +1,102 @@
+.order-details-page {
+  padding: 0 10rem;
+  display: grid;
+  gap: 1.5rem;
+}
+
+.order-summary-card,
+.tracking-card,
+.address-card,
+.items-card {
+  border: 1px solid #d2d2d2;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  background: #fff;
+}
+
+.order-summary-card {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(120px, 1fr));
+  gap: 1rem;
+}
+
+.label {
+  color: #666;
+  font-size: 0.8rem;
+}
+
+.value {
+  font-weight: 600;
+}
+
+.status {
+  text-transform: none;
+}
+
+.status.cancelled {
+  color: #ff4e4e;
+}
+
+.status.paid,
+.status.shipped {
+  color: #2a9e01;
+}
+
+.tracking-list {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.tracking-step {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dot {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 999px;
+  background: #c8c8c8;
+}
+
+.tracking-step.complete .dot {
+  background: #2a9e01;
+}
+
+.items-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.item-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 1rem;
+  border-bottom: 1px solid #eee;
+  padding: 0.5rem 0;
+}
+
+.item-price {
+  font-weight: 600;
+}
+
+.back-link {
+  width: fit-content;
+}
+
+@media only screen and (max-width: 1024px) {
+  .order-details-page {
+    padding: 0 1rem;
+  }
+
+  .order-summary-card {
+    grid-template-columns: repeat(2, minmax(120px, 1fr));
+  }
+}

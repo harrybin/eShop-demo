@@ -6,7 +6,9 @@ using Asp.Versioning.Http;
 using eShop.Ordering.API.Application.Commands;
 using eShop.Ordering.API.Application.Models;
 using eShop.Ordering.API.Application.Queries;
+using eShop.Ordering.Infrastructure;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.EntityFrameworkCore;
 
 namespace eShop.Ordering.FunctionalTests;
 
@@ -24,6 +26,18 @@ public sealed class OrderingApiTests : IClassFixture<OrderingApiFixture>
     }
 
     [Fact]
+    public async Task OrderingContextHasNoPendingMigrations()
+    {
+        // Assert that migrations are applied once the test host is up.
+        using var scope = _webApplicationFactory.Services.CreateScope();
+        var orderingContext = scope.ServiceProvider.GetRequiredService<OrderingContext>();
+
+        var pendingMigrations = await orderingContext.Database.GetPendingMigrationsAsync(TestContext.Current.CancellationToken);
+
+        Assert.Empty(pendingMigrations);
+    }
+
+    [Fact]
     public async Task GetAllStoredOrdersWorks()
     {
         // Act
@@ -33,6 +47,43 @@ public sealed class OrderingApiTests : IClassFixture<OrderingApiFixture>
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetOrdersByStatusFilterWorks()
+    {
+        // Act
+        var response = await _httpClient.GetAsync("api/orders?status=Cancelled", TestContext.Current.CancellationToken);
+        response.EnsureSuccessStatusCode();
+        var orders = await DeserializeOrderSummariesAsync(response);
+
+        // Assert
+        Assert.All(orders, order => Assert.Equal("Cancelled", order.Status));
+    }
+
+    [Fact]
+    public async Task GetOrdersPagingClampsPageSizeAndPageNumber()
+    {
+        // Act
+        var page1Response = await _httpClient.GetAsync("api/orders?pageNumber=1&pageSize=2", TestContext.Current.CancellationToken);
+        var clampedPageNumberResponse = await _httpClient.GetAsync("api/orders?pageNumber=0&pageSize=2", TestContext.Current.CancellationToken);
+        var pageSizeOneResponse = await _httpClient.GetAsync("api/orders?pageNumber=1&pageSize=1", TestContext.Current.CancellationToken);
+        var clampedPageSizeResponse = await _httpClient.GetAsync("api/orders?pageNumber=1&pageSize=0", TestContext.Current.CancellationToken);
+
+        page1Response.EnsureSuccessStatusCode();
+        clampedPageNumberResponse.EnsureSuccessStatusCode();
+        pageSizeOneResponse.EnsureSuccessStatusCode();
+        clampedPageSizeResponse.EnsureSuccessStatusCode();
+
+        var page1 = await DeserializeOrderSummariesAsync(page1Response);
+        var clampedPageNumber = await DeserializeOrderSummariesAsync(clampedPageNumberResponse);
+        var pageSizeOne = await DeserializeOrderSummariesAsync(pageSizeOneResponse);
+        var clampedPageSize = await DeserializeOrderSummariesAsync(clampedPageSizeResponse);
+
+        // Assert
+        Assert.True(page1.Count <= 2);
+        Assert.Equal(page1.Select(o => o.OrderNumber), clampedPageNumber.Select(o => o.OrderNumber));
+        Assert.Equal(pageSizeOne.Select(o => o.OrderNumber), clampedPageSize.Select(o => o.OrderNumber));
     }
 
     [Fact]
@@ -230,6 +281,15 @@ public sealed class OrderingApiTests : IClassFixture<OrderingApiFixture>
         var orderItemsProductIds = responseData.OrderItems.Select(x => x.ProductId);
         Assert.All(orderItemsProductIds, orderItemProdId => payloadItemsProductIds.Contains(orderItemProdId));
         // TODO: might need to add more asserts in here
+    }
+
+    private static async Task<List<OrderSummary>> DeserializeOrderSummariesAsync(HttpResponseMessage response)
+    {
+        var payload = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        return JsonSerializer.Deserialize<List<OrderSummary>>(payload, new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        }) ?? new List<OrderSummary>();
     }
 
     string BuildOrder()

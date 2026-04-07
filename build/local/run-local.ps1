@@ -40,13 +40,25 @@ $dashboardUrlFile = Join-Path $aspireDir "dashboard-login-url.txt"
 
 New-Item -ItemType Directory -Path $aspireDir -Force | Out-Null
 
+Write-Host ""
+Write-Host "Startup summary"
+Write-Host "Estimated startup time: 1-3 minutes (depends on first-run build and container warm-up)."
+Write-Host ""
+Write-Host "Service                                URL"
+Write-Host "-------                                ---"
+Write-Host "WebApp                                 http://localhost:5045"
+Write-Host "APIs (Catalog, Basket, Ordering, etc.) Aspire-discovered ports (see AppHost logs/dashboard)"
+Write-Host ""
+Write-Host "Aspire dashboard login URL will be written to: .aspire/dashboard-login-url.txt"
+Write-Host ""
+
 dotnet run --project src/eShop.AppHost/eShop.AppHost.csproj 2>&1 |
-    Tee-Object -FilePath $logFile |
-    ForEach-Object {
-        $line = $_.ToString()
-        if ($line -match "Login to the dashboard at\s+(https?://\S+)") {
-            $dashboardUrl = $matches[1]
-            Set-Content -Path $dashboardUrlFile -Value $dashboardUrl -Encoding utf8
-        }
-        Write-Host $line
+Tee-Object -FilePath $logFile |
+ForEach-Object {
+    $line = $_.ToString()
+    if ($line -match "Login to the dashboard at\s+(https?://\S+)") {
+        $dashboardUrl = $matches[1]
+        Set-Content -Path $dashboardUrlFile -Value $dashboardUrl -Encoding utf8
     }
+    Write-Host $line
+}

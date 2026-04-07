@@ -1,6 +1,13 @@
-﻿var builder = WebApplication.CreateBuilder(args);
+﻿using Asp.Versioning.Builder;
+
+var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
+builder.Services.AddProblemDetails();
+
+var withApiVersioning = builder.Services.AddApiVersioning();
+
+builder.AddDefaultOpenApi(withApiVersioning);
 
 builder.Services.AddControllersWithViews();
 
@@ -15,7 +22,7 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
         .AddEntityFrameworkStores<ApplicationDbContext>()
         .AddDefaultTokenProviders();
 
-builder.Services.AddIdentityServer(options =>
+var identityServerBuilder = builder.Services.AddIdentityServer(options =>
 {
     //options.IssuerUri = "null";
     options.Authentication.CookieLifetime = TimeSpan.FromHours(2);
@@ -25,16 +32,27 @@ builder.Services.AddIdentityServer(options =>
     options.Events.RaiseFailureEvents = true;
     options.Events.RaiseSuccessEvents = true;
 
-    // TODO: Remove this line in production.
-    options.KeyManagement.Enabled = false;
+    if (builder.Environment.IsDevelopment())
+    {
+        // TODO: Remove this line in production.
+        options.KeyManagement.Enabled = false;
+    }
 })
 .AddInMemoryIdentityResources(Config.GetResources())
 .AddInMemoryApiScopes(Config.GetApiScopes())
 .AddInMemoryApiResources(Config.GetApis())
 .AddInMemoryClients(Config.GetClients(builder.Configuration))
-.AddAspNetIdentity<ApplicationUser>()
-// TODO: Not recommended for production - you need to store your key material somewhere secure
-.AddDeveloperSigningCredential();
+.AddAspNetIdentity<ApplicationUser>();
+
+if (builder.Environment.IsDevelopment())
+{
+    // TODO: Not recommended for production - you need to store your key material somewhere secure
+    identityServerBuilder.AddDeveloperSigningCredential();
+}
+else
+{
+    // TODO: Add production signing credential via Azure Key Vault or similar
+}
 
 builder.Services.AddTransient<IProfileService, ProfileService>();
 builder.Services.AddTransient<ILoginService<ApplicationUser>, EFLoginService>();

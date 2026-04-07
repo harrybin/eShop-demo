@@ -1,0 +1,399 @@
+plan_id: eshop-improvements-remaining
+objective: Implement the next practical roadmap wave after Phase 0-1 by expanding Playwright coverage, adding local troubleshooting and ADR documentation, improving local run output, and updating roadmap status with targeted validation.
+created_at: "2026-04-02"
+created_by: gem-planner
+status: pending_approval
+research_confidence: high
+
+plan_metrics:
+  wave_1_task_count: 5
+  total_dependencies: 8
+  risk_score: medium
+
+tldr: |
+  This follow-on plan executes a low-risk, high-value wave focused on testing breadth and developer experience.
+  Wave 1 delivers independent artifacts in parallel: new Playwright scenarios, CI-safe browser project configuration,
+  local troubleshooting docs, ADRs, and improved local startup output.
+  Wave 2 updates CI browser execution and roadmap status once the base artifacts are in place.
+  Wave 3 runs targeted validation checks to confirm syntax and document integrity before completion.
+open_questions: []
+
+pre_mortem:
+  overall_risk_level: medium
+  critical_failure_modes:
+    - scenario: New Playwright tests are flaky due to environment timing and auth/session setup coupling.
+      likelihood: medium
+      impact: high
+      mitigation: Reuse existing login setup flow and keep scenarios limited to stable existing user paths with deterministic waits.
+    - scenario: Firefox/WebKit enablement causes CI instability or excessive runtime by running locally and in CI unexpectedly.
+      likelihood: medium
+      impact: medium
+      mitigation: Gate non-Chromium projects behind CI-only project settings and keep local default execution unchanged.
+    - scenario: Run script summary output drifts from actual endpoints and misleads developers.
+      likelihood: low
+      impact: medium
+      mitigation: Print clearly labeled expected endpoints and include an estimate note plus Aspire dashboard hint rather than asserting readiness.
+  assumptions:
+    - Existing e2e login setup and baseline specs remain valid and reusable.
+    - GitHub Actions runners can install required Playwright browser dependencies for Firefox/WebKit.
+    - Markdown additions are documentation-only and do not require architecture review approval in this pass.
+
+implementation_specification:
+  code_structure: Keep changes additive and localized to test specs, Playwright config/workflow, documentation, and local script output; avoid behavioral backend changes.
+  affected_areas:
+    - e2e/
+    - playwright.config.ts
+    - .github/workflows/playwright.yml
+    - docs/LOCAL_SETUP.md
+    - docs/adr/
+    - build/local/run-local.ps1
+    - IMPROVEMENTS.md
+  component_details:
+    - component: Playwright scenario expansion
+      responsibility: Add at least two high-value E2E scenarios for checkout/auth/session or cart persistence using existing app flows.
+      interfaces:
+        - New spec files under e2e/*.spec.ts
+        - Existing setup dependency via e2e/login.setup.ts
+    - component: CI-only browser coverage configuration
+      responsibility: Add Firefox/WebKit projects that run in CI context without burdening local default runs.
+      interfaces:
+        - playwright.config.ts projects list and conditional execution flags
+    - component: GitHub Actions browser execution
+      responsibility: Ensure workflow installs required browsers and executes broader browser coverage via matrix or equivalent.
+      interfaces:
+        - .github/workflows/playwright.yml job strategy and install/test steps
+    - component: Local developer troubleshooting guide
+      responsibility: Document prerequisites, common issues, health URLs, Aspire access, and run modes.
+      interfaces:
+        - docs/LOCAL_SETUP.md
+    - component: Architecture decision records
+      responsibility: Capture ADR-001 through ADR-004 for key architectural tradeoffs referenced in roadmap.
+      interfaces:
+        - docs/adr/ADR-001.md
+        - docs/adr/ADR-002.md
+        - docs/adr/ADR-003.md
+        - docs/adr/ADR-004.md
+    - component: Local run script startup summary
+      responsibility: Print startup summary table, estimated startup note, and Aspire dashboard URL hint for local runs.
+      interfaces:
+        - build/local/run-local.ps1 console output block
+    - component: Improvement tracker status update
+      responsibility: Mark this wave items as done/partial in roadmap status log.
+      interfaces:
+        - IMPROVEMENTS.md implementation status log and phase checkboxes
+    - component: Targeted validation checks
+      responsibility: Run quick syntax/sanity validation for Playwright config and markdown docs and capture outcomes.
+      interfaces:
+        - package.json script usage or direct npx/node checks
+        - markdown lint/parser command if available
+  dependencies:
+    - component: task-r2
+      relationship: Provides CI-only project definitions consumed by workflow updates in task-r3.
+    - component: task-r1
+      relationship: Supplies additional specs that browser-matrix workflow validates in task-r3 and task-r8.
+    - component: task-r4
+      relationship: Provides troubleshooting documentation content referenced by roadmap status update in task-r7.
+    - component: task-r5
+      relationship: Provides ADR artifacts that must be reflected in roadmap status update in task-r7.
+    - component: task-r6
+      relationship: Provides script UX improvements that must be reflected in roadmap status update in task-r7.
+  integration_points:
+    - Existing Playwright setup project and auth storage state flow
+    - Existing GitHub Actions Playwright workflow
+    - Existing local run entrypoint script for AppHost
+    - Existing roadmap phase/checklist sections in IMPROVEMENTS.md
+
+contracts:
+  - from_task: task-r1
+    to_task: task-r8
+    interface: New specs execute through existing setup and pass syntax/runtime smoke checks.
+    format: Playwright spec contract (.spec.ts test definitions)
+  - from_task: task-r2
+    to_task: task-r3
+    interface: CI-only browser projects are available for workflow selection or unified execution.
+    format: Playwright project names and env-gated config contract
+  - from_task: task-r3
+    to_task: task-r8
+    interface: Workflow syntax and command validity are checkable via quick config/lint parsing.
+    format: GitHub workflow YAML and command contract
+  - from_task: task-r4
+    to_task: task-r7
+    interface: Troubleshooting guide existence and scope coverage can be marked in status log.
+    format: Markdown doc completion contract
+  - from_task: task-r5
+    to_task: task-r7
+    interface: ADR set ADR-001..ADR-004 exists with requested decision topics.
+    format: ADR markdown file set contract
+  - from_task: task-r6
+    to_task: task-r7
+    interface: Script emits summary table and Aspire hint text for local startup UX.
+    format: PowerShell output behavior contract
+  - from_task: task-r7
+    to_task: task-r8
+    interface: Updated roadmap status is included in final validation sweep.
+    format: Markdown consistency contract
+
+tasks:
+  - id: task-r1
+    task_id: task-r1
+    title: Add two new Playwright scenarios for critical user journeys
+    description: |
+      Create at least two new E2E specs that cover checkout/auth/session or cart persistence
+      using existing stable app flows and current setup/auth patterns.
+      Keep scenarios deterministic and focused on low-risk, high-value regression coverage.
+    wave: 1
+    agent: gem-implementer
+    prototype: false
+    covers: ["phase-2-playwright-expansion", "test-coverage-critical-flows"]
+    priority: high
+    status: pending
+    dependencies: []
+    conflicts_with: []
+    files_affected:
+      - e2e/CheckoutFlowTest.spec.ts
+      - e2e/SessionPersistenceTest.spec.ts
+    context_files:
+      - path: e2e/AddItemTest.spec.ts
+        description: Existing add-to-cart journey pattern and assertions.
+      - path: e2e/login.setup.ts
+        description: Existing authenticated setup flow for storage state.
+
+  - id: task-r2
+    task_id: task-r2
+    title: Enable CI-only Firefox and WebKit projects in Playwright config
+    description: |
+      Update Playwright project definitions so Firefox and WebKit run in CI only,
+      while local default execution remains developer-friendly and fast.
+    wave: 1
+    agent: gem-implementer
+    prototype: false
+    covers: ["phase-2-playwright-expansion", "cross-browser-config"]
+    priority: high
+    status: pending
+    dependencies: []
+    conflicts_with: []
+    files_affected:
+      - playwright.config.ts
+    context_files:
+      - path: playwright.config.ts
+        description: Existing projects list and CI/local conditional settings.
+
+  - id: task-r4
+    task_id: task-r4
+    title: Create local troubleshooting setup guide
+    description: |
+      Add docs/LOCAL_SETUP.md covering prerequisites, common startup failures,
+      Aspire dashboard access, service run modes, health URLs, and migration issues.
+    wave: 1
+    agent: gem-implementer
+    prototype: false
+    covers: ["phase-5-docs", "developer-onboarding"]
+    priority: medium
+    status: pending
+    dependencies: []
+    conflicts_with: []
+    files_affected:
+      - docs/LOCAL_SETUP.md
+    context_files:
+      - path: README.md
+        description: Existing local run instructions and commands.
+      - path: build/local/run-local.ps1
+        description: Script behavior referenced in troubleshooting guidance.
+
+  - id: task-r5
+    task_id: task-r5
+    title: Add ADR-001 through ADR-004 for roadmap architecture decisions
+    description: |
+      Create docs/adr/ADR-001.md to ADR-004.md capturing rationale, alternatives,
+      and consequences for Basket gRPC choice, Ordering DbContext pooling history,
+      Identity development credentials strategy, and event-driven processors architecture.
+    wave: 1
+    agent: gem-implementer
+    prototype: false
+    covers: ["phase-5-docs", "architecture-knowledge-sharing"]
+    priority: medium
+    status: pending
+    dependencies: []
+    conflicts_with: []
+    files_affected:
+      - docs/adr/ADR-001.md
+      - docs/adr/ADR-002.md
+      - docs/adr/ADR-003.md
+      - docs/adr/ADR-004.md
+    context_files:
+      - path: IMPROVEMENTS.md
+        description: ADR topics and intent to document.
+
+  - id: task-r6
+    task_id: task-r6
+    title: Improve local run script startup summary output
+    description: |
+      Enhance build/local/run-local.ps1 to print a clear startup summary table,
+      estimated startup timing note, and Aspire dashboard URL hint after launch begins.
+      Keep behavior non-breaking and output-oriented only.
+    wave: 1
+    agent: gem-implementer
+    prototype: false
+    covers: ["phase-5-dx", "local-run-clarity"]
+    priority: medium
+    status: pending
+    dependencies: []
+    conflicts_with: []
+    files_affected:
+      - build/local/run-local.ps1
+    context_files:
+      - path: build/local/run-local.ps1
+        description: Existing startup and dashboard URL capture flow.
+
+  - id: task-r3
+    task_id: task-r3
+    title: Expand Playwright GitHub workflow for broader browser coverage
+    description: |
+      Update .github/workflows/playwright.yml to install required browsers and execute
+      broader browser coverage using a matrix or equivalent approach aligned to CI-only projects.
+      Preserve current secrets/env behavior and artifact publication.
+    wave: 2
+    agent: gem-implementer
+    prototype: false
+    covers: ["phase-2-playwright-expansion", "cross-browser-ci"]
+    priority: high
+    status: pending
+    dependencies:
+      - task-r2
+      - task-r1
+    conflicts_with: []
+    files_affected:
+      - .github/workflows/playwright.yml
+    context_files:
+      - path: .github/workflows/playwright.yml
+        description: Existing Playwright CI job structure.
+      - path: playwright.config.ts
+        description: Project names and CI-only browser configuration.
+
+  - id: task-r7
+    task_id: task-r7
+    title: Update roadmap status log for this implementation wave
+    description: |
+      Update IMPROVEMENTS.md implementation status and checklist entries to reflect
+      completed and partial items delivered in this wave with concise notes and date.
+    wave: 2
+    agent: gem-implementer
+    prototype: false
+    covers: ["roadmap-tracking", "phase-status-update"]
+    priority: medium
+    status: pending
+    dependencies:
+      - task-r4
+      - task-r5
+      - task-r6
+      - task-r3
+    conflicts_with: []
+    files_affected:
+      - IMPROVEMENTS.md
+    context_files:
+      - path: IMPROVEMENTS.md
+        description: Current implementation log and phased checklist.
+
+  - id: task-r8
+    task_id: task-r8
+    title: Run targeted validation checks for changed config and docs
+    description: |
+      Execute quick validation commands for Playwright config syntax/lint availability,
+      markdown sanity for new/updated docs, and any lightweight command checks appropriate
+      for this scope; report what was run and what was skipped with reason.
+    wave: 3
+    agent: gem-implementer
+    prototype: false
+    covers: ["validation", "change-safety"]
+    priority: high
+    status: pending
+    dependencies:
+      - task-r1
+      - task-r3
+      - task-r4
+      - task-r5
+      - task-r6
+      - task-r7
+    conflicts_with: []
+    files_affected:
+      - playwright.config.ts
+      - .github/workflows/playwright.yml
+      - docs/LOCAL_SETUP.md
+      - docs/adr/ADR-001.md
+      - docs/adr/ADR-002.md
+      - docs/adr/ADR-003.md
+      - docs/adr/ADR-004.md
+      - IMPROVEMENTS.md
+    context_files:
+      - path: package.json
+        description: Available scripts for lint/check commands.
+      - path: playwright.config.ts
+        description: Config syntax target.
+      - path: docs/LOCAL_SETUP.md
+        description: New troubleshooting guide syntax target.
+
+planning_pass: 1
+planning_history:
+  - pass: 1
+    reason: Implement remaining roadmap wave focused on low-risk, high-value DX and cross-browser E2E coverage.
+    timestamp: "2026-04-02"
+    estimated_effort: medium
+    estimated_files: 3
+    estimated_lines: 220
+    focus_area: Cross-browser Playwright coverage plus documentation and local run UX improvements
+    verification:
+      - Validate Playwright config parses and projects resolve for CI mode.
+      - Validate workflow YAML remains syntactically valid.
+      - Validate markdown files render without parser issues.
+    acceptance_criteria:
+      - task-r1 adds at least two new Playwright specs using existing flows.
+      - task-r2 adds Firefox and WebKit for CI-only execution.
+      - task-r3 updates workflow to install and run broader browser coverage.
+      - task-r4 creates LOCAL_SETUP troubleshooting guide.
+      - task-r5 creates ADR-001 through ADR-004.
+      - task-r6 enhances run-local script output summary and dashboard hint.
+      - task-r7 updates IMPROVEMENTS status for this wave.
+      - task-r8 runs and reports targeted validation checks.
+    failure_modes:
+      - scenario: Browser matrix increases flakiness and runtime beyond acceptable CI budget.
+        likelihood: medium
+        impact: medium
+        mitigation: Scope browser expansion to CI-only projects and keep retries/workers conservative.
+      - scenario: Documentation changes drift from actual commands/endpoints.
+        likelihood: low
+        impact: medium
+        mitigation: Source endpoint/run details directly from existing scripts and config files.
+      - scenario: Validation tooling unavailable in environment.
+        likelihood: medium
+        impact: low
+        mitigation: Fall back to parser-level checks and explicitly document skipped checks.
+    tech_stack:
+      - TypeScript (Playwright)
+      - GitHub Actions YAML
+      - Markdown
+      - PowerShell
+    test_coverage: Targeted E2E and configuration/documentation validation only
+    requires_review: true
+    review_depth: standard
+    review_security_sensitive: false
+    validation_matrix:
+      - scenario: Playwright CI project resolution
+        steps:
+          - Run config parse/list command in CI-mode env
+          - Confirm chromium/firefox/webkit project presence where expected
+        expected_result: Projects resolve and command exits successfully
+      - scenario: Markdown sanity for new docs
+        steps:
+          - Run markdown parser/linter if available
+          - Confirm no syntax/parser errors in LOCAL_SETUP and ADR files
+        expected_result: No parser-level markdown failures
+    environment: development
+    requires_approval: false
+    devops_security_sensitive: false
+    task_type: update
+    audience: developers
+    coverage_matrix:
+      - Playwright scenarios and CI browser breadth
+      - Local troubleshooting onboarding content
+      - ADR documentation of key architectural decisions
+      - Local run script UX clarity and status log traceability

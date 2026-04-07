@@ -7,14 +7,15 @@ public static class OrdersApi
     public static RouteGroupBuilder MapOrdersApiV1(this IEndpointRouteBuilder app)
     {
         var api = app.MapGroup("api/orders").HasApiVersion(1.0);
+        var requestValidated = api.MapGroup("/").AddEndpointFilter<ValidRequestIdFilter>();
 
-        api.MapPut("/cancel", CancelOrderAsync);
-        api.MapPut("/ship", ShipOrderAsync);
+        requestValidated.MapPut("/cancel", CancelOrderAsync);
+        requestValidated.MapPut("/ship", ShipOrderAsync);
         api.MapGet("{orderId:int}", GetOrderAsync);
         api.MapGet("/", GetOrdersByUserAsync);
         api.MapGet("/cardtypes", GetCardTypesAsync);
         api.MapPost("/draft", CreateOrderDraftAsync);
-        api.MapPost("/", CreateOrderAsync);
+        requestValidated.MapPost("/", CreateOrderAsync);
 
         return api;
     }
@@ -22,13 +23,9 @@ public static class OrdersApi
     public static async Task<Results<Ok, BadRequest<string>, ProblemHttpResult>> CancelOrderAsync(
         [FromHeader(Name = "x-requestid")] Guid requestId,
         CancelOrderCommand command,
+        CancellationToken ct,
         [AsParameters] OrderServices services)
     {
-        if (requestId == Guid.Empty)
-        {
-            return TypedResults.BadRequest("Empty GUID is not valid for request ID");
-        }
-
         var requestCancelOrder = new IdentifiedCommand<CancelOrderCommand, bool>(command, requestId);
 
         services.Logger.LogInformation(
@@ -38,7 +35,7 @@ public static class OrdersApi
             requestCancelOrder.Command.OrderNumber,
             requestCancelOrder);
 
-        var commandResult = await services.Mediator.Send(requestCancelOrder);
+        var commandResult = await services.Mediator.Send(requestCancelOrder, ct);
 
         if (!commandResult)
         {
@@ -51,13 +48,9 @@ public static class OrdersApi
     public static async Task<Results<Ok, BadRequest<string>, ProblemHttpResult>> ShipOrderAsync(
         [FromHeader(Name = "x-requestid")] Guid requestId,
         ShipOrderCommand command,
+        CancellationToken ct,
         [AsParameters] OrderServices services)
     {
-        if (requestId == Guid.Empty)
-        {
-            return TypedResults.BadRequest("Empty GUID is not valid for request ID");
-        }
-
         var requestShipOrder = new IdentifiedCommand<ShipOrderCommand, bool>(command, requestId);
 
         services.Logger.LogInformation(
@@ -67,7 +60,7 @@ public static class OrdersApi
             requestShipOrder.Command.OrderNumber,
             requestShipOrder);
 
-        var commandResult = await services.Mediator.Send(requestShipOrder);
+        var commandResult = await services.Mediator.Send(requestShipOrder, ct);
 
         if (!commandResult)
         {
@@ -77,7 +70,7 @@ public static class OrdersApi
         return TypedResults.Ok();
     }
 
-    public static async Task<Results<Ok<Order>, NotFound>> GetOrderAsync(int orderId, [AsParameters] OrderServices services)
+    public static async Task<Results<Ok<Order>, NotFound>> GetOrderAsync(int orderId, CancellationToken ct, [AsParameters] OrderServices services)
     {
         try
         {
@@ -90,20 +83,20 @@ public static class OrdersApi
         }
     }
 
-    public static async Task<Ok<IEnumerable<OrderSummary>>> GetOrdersByUserAsync([AsParameters] OrderServices services)
+    public static async Task<Ok<IEnumerable<OrderSummary>>> GetOrdersByUserAsync(CancellationToken ct, [AsParameters] OrderHistoryQuery query, [AsParameters] OrderServices services)
     {
         var userId = services.IdentityService.GetUserIdentity();
-        var orders = await services.Queries.GetOrdersFromUserAsync(userId);
+        var orders = await services.Queries.GetOrdersFromUserAsync(userId, query);
         return TypedResults.Ok(orders);
     }
 
-    public static async Task<Ok<IEnumerable<CardType>>> GetCardTypesAsync(IOrderQueries orderQueries)
+    public static async Task<Ok<IEnumerable<CardType>>> GetCardTypesAsync(CancellationToken ct, IOrderQueries orderQueries)
     {
         var cardTypes = await orderQueries.GetCardTypesAsync();
         return TypedResults.Ok(cardTypes);
     }
 
-    public static async Task<OrderDraftDTO> CreateOrderDraftAsync(CreateOrderDraftCommand command, [AsParameters] OrderServices services)
+    public static async Task<OrderDraftDTO> CreateOrderDraftAsync(CreateOrderDraftCommand command, CancellationToken ct, [AsParameters] OrderServices services)
     {
         services.Logger.LogInformation(
             "Sending command: {CommandName} - {IdProperty}: {CommandId} ({@Command})",
@@ -112,28 +105,23 @@ public static class OrdersApi
             command.BuyerId,
             command);
 
-        return await services.Mediator.Send(command);
+        return await services.Mediator.Send(command, ct);
     }
 
     public static async Task<Results<Ok, BadRequest<string>>> CreateOrderAsync(
         [FromHeader(Name = "x-requestid")] Guid requestId,
         CreateOrderRequest request,
+        CancellationToken ct,
         [AsParameters] OrderServices services)
     {
-        
+
         //mask the credit card number
-        
+
         services.Logger.LogInformation(
             "Sending command: {CommandName} - {IdProperty}: {CommandId}",
             request.GetGenericTypeName(),
             nameof(request.UserId),
             request.UserId); //don't log the request as it has CC number
-
-        if (requestId == Guid.Empty)
-        {
-            services.Logger.LogWarning("Invalid IntegrationEvent - RequestId is missing - {@IntegrationEvent}", request);
-            return TypedResults.BadRequest("RequestId is missing.");
-        }
 
         using (services.Logger.BeginScope(new List<KeyValuePair<string, object>> { new("IdentifiedCommandId", requestId) }))
         {
@@ -152,7 +140,7 @@ public static class OrdersApi
                 requestCreateOrder.Id,
                 requestCreateOrder);
 
-            var result = await services.Mediator.Send(requestCreateOrder);
+            var result = await services.Mediator.Send(requestCreateOrder, ct);
 
             if (result)
             {

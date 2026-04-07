@@ -1,0 +1,78 @@
+name: Build And Test All On Push
+
+on:
+    push:
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup .NET (global.json)
+              uses: actions/setup-dotnet@v4
+              with:
+                  global-json-file: global.json
+
+            - name: Restore
+              run: dotnet restore eShop.slnx
+
+            - name: Build Everything
+              run: dotnet build eShop.slnx --no-restore --configuration Release -m
+
+    test:
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    - os: ubuntu-latest
+                      testProject: tests/Basket.UnitTests/Basket.UnitTests.csproj
+                    - os: ubuntu-latest
+                      testProject: tests/Catalog.FunctionalTests/Catalog.FunctionalTests.csproj
+                    - os: ubuntu-latest
+                      testProject: tests/Identity.FunctionalTests/Identity.FunctionalTests.csproj
+                    - os: ubuntu-latest
+                      testProject: tests/Ordering.FunctionalTests/Ordering.FunctionalTests.csproj
+                    - os: ubuntu-latest
+                      testProject: tests/Ordering.UnitTests/Ordering.UnitTests.csproj
+                    - os: ubuntu-latest
+                      testProject: tests/OrderProcessor.FunctionalTests/OrderProcessor.FunctionalTests.csproj
+                    - os: ubuntu-latest
+                      testProject: tests/PaymentProcessor.FunctionalTests/PaymentProcessor.FunctionalTests.csproj
+                    - os: ubuntu-latest
+                      testProject: tests/Webhooks.FunctionalTests/Webhooks.FunctionalTests.csproj
+                    - os: windows-latest
+                      testProject: tests/ClientApp.UnitTests/ClientApp.UnitTests.csproj
+                      requiresMauiWorkloads: true
+
+        runs-on: ${{ matrix.os }}
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup .NET (global.json)
+              uses: actions/setup-dotnet@v4
+              with:
+                  global-json-file: global.json
+
+            - name: Update Workloads
+              if: matrix.requiresMauiWorkloads == true
+              run: dotnet workload update
+
+            - name: Install MAUI Workloads
+              if: matrix.requiresMauiWorkloads == true
+              shell: pwsh
+              run: |
+                  dotnet workload install android
+                  dotnet workload install ios
+                  dotnet workload install maccatalyst
+                  dotnet workload install maui
+
+            - name: Restore Test Project
+              run: dotnet restore ${{ matrix.testProject }}
+
+            - name: Run Test Project
+              run: dotnet test ${{ matrix.testProject }} --no-restore --configuration Release --verbosity normal

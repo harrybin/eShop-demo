@@ -26,6 +26,9 @@ public static partial class Extensions
 
             // Turn on service discovery by default
             http.AddServiceDiscovery();
+
+            // Set a default 30-second timeout on all outgoing requests to prevent connection pool exhaustion.
+            http.ConfigureHttpClient(client => client.Timeout = TimeSpan.FromSeconds(30));
         });
 
         return builder;
@@ -74,7 +77,7 @@ public static partial class Extensions
                 tracing.AddAspNetCoreInstrumentation()
                     .AddGrpcClientInstrumentation()
                     .AddHttpClientInstrumentation()
-                    .AddSource("Experimental.Microsoft.Extensions.AI");                    
+                    .AddSource("Experimental.Microsoft.Extensions.AI");
             });
 
         builder.AddOpenTelemetryExporters();
@@ -107,8 +110,45 @@ public static partial class Extensions
 
     public static WebApplication MapDefaultEndpoints(this WebApplication app)
     {
+        // Add security headers middleware
+        app.Use(async (context, next) =>
+        {
+            // Prevent MIME type sniffing
+            if (!context.Response.Headers.ContainsKey("X-Content-Type-Options"))
+            {
+                context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+            }
+
+            // Prevent clickjacking
+            if (!context.Response.Headers.ContainsKey("X-Frame-Options"))
+            {
+                context.Response.Headers["X-Frame-Options"] = "SAMEORIGIN";
+            }
+
+            // Content Security Policy
+            var csp = "default-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'self';";
+            if (!context.Response.Headers.ContainsKey("Content-Security-Policy"))
+            {
+                context.Response.Headers["Content-Security-Policy"] = csp;
+            }
+
+            // Referrer policy
+            if (!context.Response.Headers.ContainsKey("Referrer-Policy"))
+            {
+                context.Response.Headers["Referrer-Policy"] = "no-referrer";
+            }
+
+            await next();
+        });
+
         // Uncomment the following line to enable the Prometheus endpoint (requires the OpenTelemetry.Exporter.Prometheus.AspNetCore package)
         // app.MapPrometheusScrapingEndpoint();
+
+        // Only health checks tagged with the "live" tag must pass for app to be considered alive
+        app.MapHealthChecks("/alive", new HealthCheckOptions
+        {
+            Predicate = r => r.Tags.Contains("live")
+        });
 
         // Adding health checks endpoints to applications in non-development environments has security implications.
         // See https://aka.ms/dotnet/aspire/healthchecks for details before enabling these endpoints in non-development environments.
@@ -116,12 +156,6 @@ public static partial class Extensions
         {
             // All health checks must pass for app to be considered ready to accept traffic after starting
             app.MapHealthChecks("/health");
-
-            // Only health checks tagged with the "live" tag must pass for app to be considered alive
-            app.MapHealthChecks("/alive", new HealthCheckOptions
-            {
-                Predicate = r => r.Tags.Contains("live")
-            });
         }
 
         return app;

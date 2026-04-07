@@ -1,0 +1,415 @@
+plan_id: eshop-improvements
+objective: Implement prioritized improvements from IMPROVEMENTS.md, focusing on Phase 0 (Guardrails) and Phase 1 (Consistency and Reliability), and log completion status back to IMPROVEMENTS.md.
+created_at: "2026-04-02"
+created_by: gem-planner
+status: pending_approval
+research_confidence: high
+
+plan_metrics:
+  wave_1_task_count: 4
+  total_dependencies: 13
+  risk_score: high
+
+tldr: |
+  This plan executes the requested improvements in three waves with explicit dependency control.
+  Wave 1 applies critical guardrails and CI/test determinism fixes with no blockers.
+  Wave 2 standardizes cancellation and endpoint behavior consistency across APIs and service defaults.
+  Wave 3 applies a higher-risk infrastructure optimization (DbContext pooling) only after Wave 2 stabilizes,
+  then records all implementation status entries in IMPROVEMENTS.md.
+open_questions: []
+
+pre_mortem:
+  overall_risk_level: high
+  critical_failure_modes:
+    - scenario: Identity signing credentials remain dev-grade in non-development environments due to incorrect guard placement.
+      likelihood: medium
+      impact: critical
+      mitigation: Require explicit IsDevelopment guard around developer key settings and include TODO placeholder for production signing credentials.
+    - scenario: CancellationToken propagation is only partially applied, causing hanging requests or delayed shutdown under load.
+      likelihood: medium
+      impact: high
+      mitigation: Add CancellationToken to every async handler signature in Ordering and Catalog APIs and thread through all I/O calls in one pass.
+    - scenario: Health endpoint exposure change leaks detailed dependency health publicly.
+      likelihood: medium
+      impact: high
+      mitigation: Keep detailed /health endpoint development-only, expose lightweight /alive and dependency-based /ready with safe response shape for all environments.
+    - scenario: Switching to AddDbContextPool breaks runtime due to constructor incompatibility or context state assumptions.
+      likelihood: medium
+      impact: high
+      mitigation: Validate OrderingContext constructor compatibility first, then switch registration and run targeted functional tests before status logging.
+    - scenario: CI changes fail due to incorrect coverage collection or codecov upload configuration.
+      likelihood: low
+      impact: medium
+      mitigation: Add coverage collection flags to test command and insert post-test codecov step with repository-secret-based token strategy.
+  assumptions:
+    - Existing CI secrets and permissions support codecov upload.
+    - No out-of-band architectural constraints block adding /ready endpoint in service defaults.
+    - Ordering and Catalog async handlers already use I/O APIs that accept CancellationToken.
+    - IMPROVEMENTS.md status section can be updated without changing roadmap intent.
+
+implementation_specification:
+  code_structure: Apply focused, minimal edits in existing API composition files and fixtures; introduce reusable endpoint filter for requestId validation; preserve current route grouping and API versioning styles.
+  affected_areas:
+    - src/Identity.API/Program.cs
+    - eShop.Web.slnf
+    - .github/workflows/pr-validation.yml
+    - tests/Catalog.FunctionalTests/CatalogApiFixture.cs
+    - src/Ordering.API/Apis/OrdersApi.cs
+    - src/eShop.ServiceDefaults/Extensions.cs
+    - src/Catalog.API/Apis/CatalogApi.cs
+    - src/Ordering.API/Extensions/Extensions.cs
+    - src/Ordering.Infrastructure/OrderingContext.cs
+    - IMPROVEMENTS.md
+  component_details:
+    - component: Identity credential configuration
+      responsibility: Ensure dev-only key management and signing credentials are gated to development environments.
+      interfaces:
+        - Program.cs identity server setup block
+    - component: Solution filter completeness
+      responsibility: Include ClientApp unit tests project in web solution filter to improve developer test visibility.
+      interfaces:
+        - eShop.Web.slnf projects list
+    - component: PR validation coverage workflow
+      responsibility: Collect cross-platform code coverage and publish it through codecov after tests.
+      interfaces:
+        - pr-validation workflow test and upload steps
+    - component: Functional test container determinism
+      responsibility: Pin pgvector image tag to stable semver to avoid drifting latest tag behavior.
+      interfaces:
+        - CatalogApiFixture postgres container configuration
+    - component: Orders API request lifecycle consistency
+      responsibility: Add cancellation token propagation and centralized requestId validation for all relevant endpoints.
+      interfaces:
+        - Orders API handler signatures
+        - Reusable IEndpointFilter for requestId
+    - component: Service health endpoints
+      responsibility: Provide safe always-on liveness and readiness endpoints while preserving detailed development-only diagnostics.
+      interfaces:
+        - MapDefaultEndpoints health endpoint mapping
+    - component: Catalog API cancellation propagation
+      responsibility: Add cancellation token support to all async catalog handlers and downstream calls.
+      interfaces:
+        - Catalog API endpoint handlers
+    - component: Ordering DbContext pooling
+      responsibility: Enable DbContext pooling after constructor compatibility correction in OrderingContext.
+      interfaces:
+        - AddOrderingServices registration path
+        - OrderingContext constructors
+    - component: Improvement tracking document
+      responsibility: Mark completion status of implemented items for roadmap traceability.
+      interfaces:
+        - IMPROVEMENTS.md status/log entries
+  dependencies:
+    - component: task-005
+      relationship: Provides cancellation-safe Orders API handlers needed before pooling stabilization verification in task-009.
+    - component: task-006
+      relationship: Removes duplicated requestId checks and stabilizes endpoint behavior before Wave 3 reliability work.
+    - component: task-007
+      relationship: Establishes final health endpoint contract before completion logging.
+    - component: task-008
+      relationship: Aligns cancellation semantics across APIs before final consistency validation and logging.
+  integration_points:
+    - Existing minimal API route groups and endpoint mapping in Ordering and Catalog APIs
+    - Existing service default endpoint mapping in eShop.ServiceDefaults
+    - Existing CI workflow in GitHub Actions
+    - Existing functional test fixtures using containerized dependencies
+
+contracts:
+  - from_task: task-005
+    to_task: task-009
+    interface: Orders API handlers consistently accept and propagate CancellationToken to all mediator and data I/O paths.
+    format: Async endpoint method signature and invocation contract
+  - from_task: task-006
+    to_task: task-009
+    interface: requestId validation is enforced via route filter rather than inline duplication.
+    format: IEndpointFilter attached to Orders route group
+  - from_task: task-007
+    to_task: task-010
+    interface: Final health endpoint behavior matrix for /alive, /ready, and /health is established for status reporting.
+    format: Endpoint availability contract by environment
+  - from_task: task-008
+    to_task: task-010
+    interface: Catalog handlers cancellation behavior is normalized and ready for completion logging.
+    format: Async endpoint signature and I/O propagation contract
+  - from_task: task-009
+    to_task: task-010
+    interface: Ordering pooling decision and constructor compatibility outcome is finalized for roadmap status update.
+    format: EF Core registration and context constructor compatibility contract
+
+tasks:
+  - id: task-001
+    task_id: task-001
+    title: Fix Identity.API dev credentials guard
+    description: |
+      Wrap dev-only key management and developer signing credential setup in IsDevelopment guard.
+      Keep production path explicit by leaving a TODO placeholder comment for AddSigningCredential(...).
+    wave: 1
+    agent: gem-implementer
+    prototype: false
+    covers: ["phase-0-guardrails", "identity-prod-safety"]
+    priority: high
+    status: pending
+    dependencies: []
+    conflicts_with: []
+    files_affected:
+      - src/Identity.API/Program.cs
+    context_files:
+      - path: src/Identity.API/Program.cs
+        description: IdentityServer credential and key management configuration.
+
+  - id: task-002
+    task_id: task-002
+    title: Fix solution filter by adding ClientApp.UnitTests
+    description: |
+      Add the missing ClientApp.UnitTests project path to the web solution filter to ensure local and CI discoverability.
+    wave: 1
+    agent: gem-implementer
+    prototype: false
+    covers: ["phase-0-guardrails", "solution-consistency"]
+    priority: medium
+    status: pending
+    dependencies: []
+    conflicts_with: []
+    files_affected:
+      - eShop.Web.slnf
+    context_files:
+      - path: eShop.Web.slnf
+        description: Solution filter project inclusion list.
+
+  - id: task-003
+    task_id: task-003
+    title: Add code coverage collection and codecov upload to CI
+    description: |
+      Extend PR validation test command with XPlat coverage collection and add a codecov upload step immediately after tests.
+    wave: 1
+    agent: gem-implementer
+    prototype: false
+    covers: ["phase-0-guardrails", "ci-quality-gates"]
+    priority: high
+    status: pending
+    dependencies: []
+    conflicts_with: []
+    files_affected:
+      - .github/workflows/pr-validation.yml
+    context_files:
+      - path: .github/workflows/pr-validation.yml
+        description: PR validation workflow test and artifact/reporting steps.
+
+  - id: task-004
+    task_id: task-004
+    title: Pin pgvector image tag for catalog functional tests
+    description: |
+      Replace floating latest pgvector tag with v0.7.0 to make functional test environment deterministic.
+    wave: 1
+    agent: gem-implementer
+    prototype: false
+    covers: ["phase-0-guardrails", "test-determinism"]
+    priority: medium
+    status: pending
+    dependencies: []
+    conflicts_with: []
+    files_affected:
+      - tests/Catalog.FunctionalTests/CatalogApiFixture.cs
+    context_files:
+      - path: tests/Catalog.FunctionalTests/CatalogApiFixture.cs
+        description: Testcontainer image configuration for pgvector.
+
+  - id: task-005
+    task_id: task-005
+    title: Add CancellationToken propagation to Ordering.API handlers
+    description: |
+      Add CancellationToken ct parameters to all async Orders API handlers and pass ct to mediator/data operations.
+      Ensure no asynchronous I/O call remains uncancelable.
+    wave: 2
+    agent: gem-implementer
+    prototype: false
+    covers: ["phase-1-consistency", "cancellation-propagation-ordering"]
+    priority: high
+    status: pending
+    dependencies: []
+    conflicts_with:
+      - task-006
+    files_affected:
+      - src/Ordering.API/Apis/OrdersApi.cs
+    context_files:
+      - path: src/Ordering.API/Apis/OrdersApi.cs
+        description: Orders endpoints and mediator interaction logic.
+
+  - id: task-006
+    task_id: task-006
+    title: Extract duplicate requestId validation into endpoint filter
+    description: |
+      Remove repeated requestId == Guid.Empty checks from Orders endpoints and enforce validation via reusable IEndpointFilter.
+      Apply filter at route-group level for consistent behavior.
+    wave: 2
+    agent: gem-implementer
+    prototype: false
+    covers: ["phase-1-consistency", "request-validation-dedup"]
+    priority: high
+    status: pending
+    dependencies: []
+    conflicts_with:
+      - task-005
+    files_affected:
+      - src/Ordering.API/Apis/OrdersApi.cs
+      - src/Ordering.API/Apis/Filters/ValidRequestIdFilter.cs
+    context_files:
+      - path: src/Ordering.API/Apis/OrdersApi.cs
+        description: Contains duplicated requestId guards and route group.
+
+  - id: task-007
+    task_id: task-007
+    title: Expose health checks safely in all environments
+    description: |
+      Move /alive outside development-only guard, keep detailed /health development-only, and add /ready with dependency readiness checks available in all environments.
+    wave: 2
+    agent: gem-implementer
+    prototype: false
+    covers: ["phase-1-reliability", "health-endpoint-contract"]
+    priority: high
+    status: pending
+    dependencies: []
+    conflicts_with: []
+    files_affected:
+      - src/eShop.ServiceDefaults/Extensions.cs
+    context_files:
+      - path: src/eShop.ServiceDefaults/Extensions.cs
+        description: Default endpoint mapping and health check policies.
+
+  - id: task-008
+    task_id: task-008
+    title: Add CancellationToken propagation to Catalog.API handlers
+    description: |
+      Add CancellationToken ct parameters to async catalog handlers and propagate to all database and external I/O calls.
+    wave: 2
+    agent: gem-implementer
+    prototype: false
+    covers: ["phase-1-consistency", "cancellation-propagation-catalog"]
+    priority: high
+    status: pending
+    dependencies: []
+    conflicts_with: []
+    files_affected:
+      - src/Catalog.API/Apis/CatalogApi.cs
+    context_files:
+      - path: src/Catalog.API/Apis/CatalogApi.cs
+        description: Catalog endpoint mappings and async handler methods.
+
+  - id: task-009
+    task_id: task-009
+    title: Fix Ordering DbContext constructor compatibility and enable pooling
+    description: |
+      Inspect OrderingContext constructors, add public DbContextOptions<OrderingContext> constructor overload if required,
+      then switch registration from AddDbContext to AddDbContextPool in Ordering API extensions.
+    wave: 3
+    agent: gem-implementer
+    prototype: false
+    covers: ["phase-1-reliability", "dbcontext-pooling-ordering"]
+    priority: high
+    status: pending
+    dependencies:
+      - task-005
+      - task-006
+      - task-007
+      - task-008
+    conflicts_with: []
+    files_affected:
+      - src/Ordering.API/Extensions/Extensions.cs
+      - src/Ordering.Infrastructure/OrderingContext.cs
+    context_files:
+      - path: src/Ordering.API/Extensions/Extensions.cs
+        description: DbContext registration path currently using AddDbContext.
+      - path: src/Ordering.Infrastructure/OrderingContext.cs
+        description: OrderingContext constructors and EF Core configuration behavior.
+
+  - id: task-010
+    task_id: task-010
+    title: Update roadmap progress in IMPROVEMENTS.md
+    description: |
+      Record completion status for each implemented improvement item from this plan, including guardrails and consistency/reliability milestones.
+    wave: 3
+    agent: gem-implementer
+    prototype: false
+    covers: ["phase-0-guardrails", "phase-1-consistency", "phase-1-reliability", "status-tracking"]
+    priority: medium
+    status: pending
+    dependencies:
+      - task-001
+      - task-002
+      - task-003
+      - task-004
+      - task-005
+      - task-006
+      - task-007
+      - task-008
+      - task-009
+    conflicts_with: []
+    files_affected:
+      - IMPROVEMENTS.md
+    context_files:
+      - path: IMPROVEMENTS.md
+        description: Improvement roadmap and status logging destination.
+
+planning_pass: 1
+planning_history:
+  - pass: 1
+    reason: Initial DAG generated from explicit user objective and provided research findings.
+    timestamp: "2026-04-02"
+    estimated_effort: large
+    estimated_files: 3
+    estimated_lines: 300
+    focus_area: "Phase 0 guardrails and Phase 1 consistency and reliability"
+    verification:
+      - Validate all requested tasks are present with exact IDs and wave assignment.
+      - Validate dependency graph is acyclic and wave constraints are respected.
+      - Validate each task includes files_affected and assigned agent.
+      - Validate plan metrics align with dependencies and wave-1 parallelism.
+    acceptance_criteria:
+      - Plan includes task-001 through task-010 with required file targets.
+      - Wave 1 has four independent tasks with no dependencies.
+      - Wave 3 task-009 depends on wave-2 stability tasks.
+      - Plan file is saved to docs/plan/eshop-improvements/plan.yaml.
+      - Plan includes risk analysis and quantified plan_metrics.
+    failure_modes:
+      - scenario: Scope creep beyond Phase 0 and Phase 1 increases execution risk and timeline.
+        likelihood: medium
+        impact: high
+        mitigation: Keep all tasks constrained to explicit requested improvements only.
+      - scenario: Overlapping edits in OrdersApi cause merge conflicts between task-005 and task-006.
+        likelihood: high
+        impact: medium
+        mitigation: Mark tasks as conflicting and coordinate serial execution within wave.
+      - scenario: CI coverage integration fails due to missing secrets or permissions.
+        likelihood: medium
+        impact: medium
+        mitigation: Add explicit codecov step contract and verify workflow permissions before merge.
+    tech_stack:
+      - .NET 9 minimal APIs
+      - EF Core with Npgsql
+      - GitHub Actions
+      - Testcontainers
+    test_coverage: "Targeted unit/functional tests per impacted service; CI coverage collection added in task-003."
+    requires_review: true
+    review_depth: full
+    review_security_sensitive: true
+    validation_matrix:
+      - scenario: Identity production guardrails
+        steps:
+          - Verify developer signing and disabled key management are only in IsDevelopment branch.
+          - Verify production branch has explicit TODO for secure signing credential.
+        expected_result: No dev credentials configured outside development.
+      - scenario: Health endpoint environment behavior
+        steps:
+          - Check endpoint mapping for /alive and /ready without development guard.
+          - Check /health remains development-only.
+        expected_result: Liveness/readiness available in all environments; full health restricted.
+    environment: development
+    requires_approval: true
+    devops_security_sensitive: true
+    task_type: walkthrough
+    audience: developers
+    coverage_matrix:
+      - Phase 0 guardrails tasks (001-004)
+      - Phase 1 consistency tasks (005-008)
+      - Phase 1 reliability tasks (009)
+      - Progress logging task (010)

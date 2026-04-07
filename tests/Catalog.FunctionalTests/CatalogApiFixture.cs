@@ -20,7 +20,7 @@ public sealed class CatalogApiFixture : WebApplicationFactory<Program>, IAsyncLi
         var appBuilder = DistributedApplication.CreateBuilder(options);
         Postgres = appBuilder.AddPostgres("CatalogDB")
             .WithImage("ankane/pgvector")
-            .WithImageTag("latest");
+            .WithImageTag("v0.7.0");
         _app = appBuilder.Build();
     }
 

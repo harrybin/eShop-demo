@@ -171,6 +171,60 @@
             "problemMatcher": []
         },
         {
+            "label": "Stop: Running App Processes",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-Command",
+                "$names = @('Basket.API','Catalog.API','Identity.API','Ordering.API','Webhooks.API','OrderProcessor','PaymentProcessor','WebApp'); Get-Process | Where-Object { $names -contains $_.ProcessName } | ForEach-Object { Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue }; Write-Host 'Stopped running app processes if any were active.'"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Build: All",
+            "type": "shell",
+            "command": "dotnet",
+            "args": [
+                "build",
+                "eShop.slnx"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": "build",
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "Build: All (Safe)",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "Stop: Running App Processes",
+                "Build: All"
+            ],
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "Run: Tests",
+            "type": "shell",
+            "command": "dotnet",
+            "args": [
+                "test",
+                "eShop.slnx"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": "test",
+            "problemMatcher": "$msCompile"
+        },
+        {
             "label": "Run: All (AppHost)",
             "type": "shell",
             "command": "powershell",

@@ -1,0 +1,16 @@
+# Brownfield sprint tracking for remaining implementation gaps
+# Status definitions:
+# - backlog: not contexted yet
+# - ready-for-dev: story context complete and ready for implementation
+# - in-progress: implementation started
+# - in-review: implementation complete and pending review
+# - done: merged and validated
+
+sprint_name: brownfield-gap-closure
+last_updated: 2026-04-07
+development_status:
+  epic-4: in-progress
+  4-1-order-status-timeline-read-model: ready-for-dev
+  epic-7: in-progress
+  7-1-startup-validation-enforcement: ready-for-dev
+  7-2-catalog-functional-tests-stabilization: ready-for-dev

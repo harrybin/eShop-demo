@@ -1,0 +1,131 @@
+@page "/user/orders/{OrderNumber:int}"
+@attribute [Authorize]
+@inject OrderingService OrderingService
+
+<div class="order-details-page">
+    <h1 class="order-page-title">Order #@OrderNumber</h1>
+@if (order is null)
+{
+    if (notFound)
+    {
+        <p>Order not found.</p>
+    }
+    else
+    {
+        <p>Loading...</p>
+    }
+}
+else
+{
+    <div class="order-summary-card">
+        <div>
+            <div class="label">Order number</div>
+            <div class="value">@order.OrderNumber</div>
+        </div>
+        <div>
+            <div class="label">Placed on</div>
+            <div class="value">@order.Date.ToString("yyyy-MM-dd HH:mm")</div>
+        </div>
+        <div>
+            <div class="label">Current status</div>
+            <div class="value status @order.Status.ToLowerInvariant()">@order.Status</div>
+        </div>
+        <div>
+            <div class="label">Total</div>
+            <div class="value">$@order.Total.ToString("0.00")</div>
+        </div>
+    </div>
+
+    <div class="tracking-card">
+        <h2>Status tracking</h2>
+        <ul class="tracking-list">
+            @foreach (var step in trackingSteps)
+            {
+                <li class="tracking-step @(step.IsComplete ? "complete" : "pending")">
+                    <span class="dot" aria-hidden="true"></span>
+                    <span>@step.Label</span>
+                </li>
+            }
+        </ul>
+    </div>
+
+    <div class="address-card">
+        <h2>Shipping address</h2>
+        <p>@order.Street</p>
+        <p>@order.City, @order.State @order.Zipcode</p>
+        <p>@order.Country</p>
+    </div>
+
+    <div class="items-card">
+        <h2>Items</h2>
+        @if (order.OrderItems.Count == 0)
+        {
+            <p>No order items found.</p>
+        }
+        else
+        {
+            <ul class="items-list">
+                @foreach (var item in order.OrderItems)
+                {
+                    <li class="item-row">
+                        <div class="item-name">@item.ProductName</div>
+                        <div class="item-meta">Qty: @item.Units</div>
+                        <div class="item-price">$@item.UnitPrice.ToString("0.00")</div>
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+
+    <a class="back-link" href="/user/orders">Back to orders</a>
+}
+</div>
+
+@code {
+    [Parameter]
+    public int OrderNumber { get; set; }
+
+    private OrderDetailsRecord? order;
+    private bool notFound;
+    private IReadOnlyList<TrackingStep> trackingSteps = [];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        notFound = false;
+        order = await OrderingService.GetOrder(OrderNumber);
+        if (order is null)
+        {
+            notFound = true;
+            trackingSteps = [];
+            return;
+        }
+
+        trackingSteps = BuildTrackingSteps(order.Status);
+    }
+
+    private static IReadOnlyList<TrackingStep> BuildTrackingSteps(string currentStatus)
+    {
+        var steps = new[] { "Submitted", "AwaitingValidation", "StockConfirmed", "Paid", "Shipped" };
+
+        if (string.Equals(currentStatus, "Cancelled", StringComparison.OrdinalIgnoreCase))
+        {
+            return
+            [
+                new TrackingStep("Submitted", true),
+                new TrackingStep("Cancelled", true)
+            ];
+        }
+
+        var currentIndex = Array.FindIndex(steps, s => string.Equals(s, currentStatus, StringComparison.OrdinalIgnoreCase));
+        if (currentIndex < 0)
+        {
+            currentIndex = 0;
+        }
+
+        return steps
+            .Select((label, index) => new TrackingStep(label, index <= currentIndex))
+            .ToArray();
+    }
+
+    private sealed record TrackingStep(string Label, bool IsComplete);
+}

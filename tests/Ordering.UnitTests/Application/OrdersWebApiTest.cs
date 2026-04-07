@@ -30,25 +30,10 @@ public class OrdersWebApiTest
 
         // Act
         var orderServices = new OrderServices(_mediatorMock, _orderQueriesMock, _identityServiceMock, _loggerMock);
-        var result = await OrdersApi.CancelOrderAsync(Guid.NewGuid(), new CancelOrderCommand(1), orderServices);
+        var result = await OrdersApi.CancelOrderAsync(Guid.NewGuid(), new CancelOrderCommand(1), CancellationToken.None, orderServices);
 
         // Assert
         Assert.IsInstanceOfType<Ok>(result.Result);
-    }
-
-    [TestMethod]
-    public async Task Cancel_order_bad_request()
-    {
-        // Arrange
-        _mediatorMock.Send(Arg.Any<IdentifiedCommand<CancelOrderCommand, bool>>(), default)
-            .Returns(Task.FromResult(true));
-
-        // Act
-        var orderServices = new OrderServices(_mediatorMock, _orderQueriesMock, _identityServiceMock, _loggerMock);
-        var result = await OrdersApi.CancelOrderAsync(Guid.Empty, new CancelOrderCommand(1), orderServices);
-
-        // Assert
-        Assert.IsInstanceOfType<BadRequest<string>>(result.Result);
     }
 
     [TestMethod]
@@ -60,7 +45,7 @@ public class OrdersWebApiTest
 
         // Act
         var orderServices = new OrderServices(_mediatorMock, _orderQueriesMock, _identityServiceMock, _loggerMock);
-        var result = await OrdersApi.ShipOrderAsync(Guid.NewGuid(), new ShipOrderCommand(1), orderServices);
+        var result = await OrdersApi.ShipOrderAsync(Guid.NewGuid(), new ShipOrderCommand(1), CancellationToken.None, orderServices);
 
         // Assert
         Assert.IsInstanceOfType<Ok>(result.Result);
@@ -68,38 +53,69 @@ public class OrdersWebApiTest
     }
 
     [TestMethod]
-    public async Task Ship_order_bad_request()
-    {
-        // Arrange
-        _mediatorMock.Send(Arg.Any<IdentifiedCommand<CreateOrderCommand, bool>>(), default)
-            .Returns(Task.FromResult(true));
-
-        // Act
-        var orderServices = new OrderServices(_mediatorMock, _orderQueriesMock, _identityServiceMock, _loggerMock);
-        var result = await OrdersApi.ShipOrderAsync(Guid.Empty, new ShipOrderCommand(1), orderServices);
-
-        // Assert
-        Assert.IsInstanceOfType<BadRequest<string>>(result.Result);
-    }
-
-    [TestMethod]
-    public async Task Get_orders_success()
+    public async Task Get_orders_success_with_default_query_values()
     {
         // Arrange
         var fakeDynamicResult = Enumerable.Empty<OrderSummary>();
+        var userId = Guid.NewGuid().ToString();
 
         _identityServiceMock.GetUserIdentity()
-            .Returns(Guid.NewGuid().ToString());
+            .Returns(userId);
 
-        _orderQueriesMock.GetOrdersFromUserAsync(Guid.NewGuid().ToString())
+        _orderQueriesMock.GetOrdersFromUserAsync(
+                userId,
+                Arg.Is<OrderHistoryQuery>(q =>
+                    q.Status == null &&
+                    q.FromDateUtc == null &&
+                    q.ToDateUtc == null &&
+                    q.PageNumber == 1 &&
+                    q.PageSize == 20))
             .Returns(Task.FromResult(fakeDynamicResult));
 
         // Act
         var orderServices = new OrderServices(_mediatorMock, _orderQueriesMock, _identityServiceMock, _loggerMock);
-        var result = await OrdersApi.GetOrdersByUserAsync(orderServices);
+        var result = await OrdersApi.GetOrdersByUserAsync(CancellationToken.None, new OrderHistoryQuery(), orderServices);
 
         // Assert
         Assert.IsInstanceOfType<Ok<IEnumerable<OrderSummary>>>(result);
+        Assert.AreSame(fakeDynamicResult, result.Value);
+    }
+
+    [TestMethod]
+    public async Task Get_orders_success_with_explicit_query_filters()
+    {
+        // Arrange
+        var fakeDynamicResult = Enumerable.Empty<OrderSummary>();
+        var userId = Guid.NewGuid().ToString();
+        var fromDate = DateTime.UtcNow.AddDays(-7);
+        var toDate = DateTime.UtcNow;
+        var query = new OrderHistoryQuery
+        {
+            Status = eShop.Ordering.Domain.AggregatesModel.OrderAggregate.OrderStatus.Paid,
+            FromDateUtc = fromDate,
+            ToDateUtc = toDate,
+            PageNumber = 2,
+            PageSize = 10
+        };
+
+        _identityServiceMock.GetUserIdentity().Returns(userId);
+        _orderQueriesMock.GetOrdersFromUserAsync(
+                userId,
+                Arg.Is<OrderHistoryQuery>(q =>
+                    q.Status == query.Status &&
+                    q.FromDateUtc == query.FromDateUtc &&
+                    q.ToDateUtc == query.ToDateUtc &&
+                    q.PageNumber == query.PageNumber &&
+                    q.PageSize == query.PageSize))
+            .Returns(Task.FromResult(fakeDynamicResult));
+
+        // Act
+        var orderServices = new OrderServices(_mediatorMock, _orderQueriesMock, _identityServiceMock, _loggerMock);
+        var result = await OrdersApi.GetOrdersByUserAsync(CancellationToken.None, query, orderServices);
+
+        // Assert
+        Assert.IsInstanceOfType<Ok<IEnumerable<OrderSummary>>>(result);
+        Assert.AreSame(fakeDynamicResult, result.Value);
     }
 
     [TestMethod]
@@ -113,7 +129,7 @@ public class OrdersWebApiTest
 
         // Act
         var orderServices = new OrderServices(_mediatorMock, _orderQueriesMock, _identityServiceMock, _loggerMock);
-        var result = await OrdersApi.GetOrderAsync(fakeOrderId, orderServices);
+        var result = await OrdersApi.GetOrderAsync(fakeOrderId, CancellationToken.None, orderServices);
 
         // Assert
         Assert.IsInstanceOfType<Ok<Order>>(result.Result);
@@ -132,7 +148,7 @@ public class OrdersWebApiTest
 
         // Act
         var orderServices = new OrderServices(_mediatorMock, _orderQueriesMock, _identityServiceMock, _loggerMock);
-        var result = await OrdersApi.GetOrderAsync(fakeOrderId, orderServices);
+        var result = await OrdersApi.GetOrderAsync(fakeOrderId, CancellationToken.None, orderServices);
 
         // Assert
         Assert.IsInstanceOfType<NotFound>(result.Result);
@@ -147,7 +163,7 @@ public class OrdersWebApiTest
             .Returns(Task.FromResult(fakeDynamicResult));
 
         // Act
-        var result = await OrdersApi.GetCardTypesAsync(_orderQueriesMock);
+        var result = await OrdersApi.GetCardTypesAsync(CancellationToken.None, _orderQueriesMock);
 
         // Assert
         Assert.IsInstanceOfType<Ok<IEnumerable<CardType>>>(result);
