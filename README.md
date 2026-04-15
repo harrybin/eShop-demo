@@ -1,5 +1,26 @@
 # eShop Reference Application - "AdventureWorks"
 
+## About This Demo Fork
+
+This repository is a **demo and learning fork** of the official [dotnet/eShop](https://github.com/dotnet/eShop) reference application. It is intended for workshops, bootcamps, and hands-on exploration of modern .NET microservices patterns.
+
+Beyond the original application code it adds:
+
+- **[`bootcamp-eShop/`](./bootcamp-eShop/)** — onboarding and learning guides:
+  - [BOOTCAMP.md](./bootcamp-eShop/BOOTCAMP.md) — quick-start for new contributors
+  - [ARCHITECTURE.md](./bootcamp-eShop/ARCHITECTURE.md) — system design and component overview
+  - [CODEMAP.md](./bootcamp-eShop/CODEMAP.md) — guided tour of the source tree
+  - [ONBOARDING.md](./bootcamp-eShop/ONBOARDING.md) — step-by-step setup checklist
+  - [FIRST_TASKS.md](./bootcamp-eShop/FIRST_TASKS.md) — starter issues for new contributors
+  - [SECURITY.md](./bootcamp-eShop/SECURITY.md) — security findings specific to this fork
+  - [RADAR.md](./bootcamp-eShop/RADAR.md) — technology risk radar
+  - [DEPENDENCIES.md](./bootcamp-eShop/DEPENDENCIES.md) — dependency graph
+- **[IMPROVEMENTS.md](./IMPROVEMENTS.md)** — a prioritized roadmap of architectural and quality improvements identified in this codebase
+
+For the production-ready upstream application please refer to [dotnet/eShop](https://github.com/dotnet/eShop).
+
+---
+
 A reference .NET application implementing an e-commerce website using a services-based architecture using [.NET Aspire](https://learn.microsoft.com/dotnet/aspire/).
 
 ![eShop Reference Application architecture diagram](img/eshop_architecture.png)
