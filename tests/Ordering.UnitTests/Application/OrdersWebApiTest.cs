@@ -69,7 +69,8 @@ public class OrdersWebApiTest
                     q.FromDateUtc == null &&
                     q.ToDateUtc == null &&
                     q.PageNumber == 1 &&
-                    q.PageSize == 20))
+                q.PageSize == 20),
+            Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(fakeDynamicResult));
 
         // Act
@@ -106,7 +107,8 @@ public class OrdersWebApiTest
                     q.FromDateUtc == query.FromDateUtc &&
                     q.ToDateUtc == query.ToDateUtc &&
                     q.PageNumber == query.PageNumber &&
-                    q.PageSize == query.PageSize))
+                q.PageSize == query.PageSize),
+            Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(fakeDynamicResult));
 
         // Act
@@ -123,8 +125,8 @@ public class OrdersWebApiTest
     {
         // Arrange
         var fakeOrderId = 123;
-        var fakeDynamicResult = new Order();
-        _orderQueriesMock.GetOrderAsync(Arg.Any<int>())
+        var fakeDynamicResult = new Order { Timeline = [] };
+        _orderQueriesMock.GetOrderAsync(Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(fakeDynamicResult));
 
         // Act
@@ -142,7 +144,7 @@ public class OrdersWebApiTest
         // Arrange
         var fakeOrderId = 123;
 #pragma warning disable NS5003
-        _orderQueriesMock.GetOrderAsync(Arg.Any<int>())
+        _orderQueriesMock.GetOrderAsync(Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Throws(new KeyNotFoundException());
 #pragma warning restore NS5003
 
@@ -159,7 +161,7 @@ public class OrdersWebApiTest
     {
         // Arrange
         var fakeDynamicResult = Enumerable.Empty<CardType>();
-        _orderQueriesMock.GetCardTypesAsync()
+        _orderQueriesMock.GetCardTypesAsync(Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(fakeDynamicResult));
 
         // Act

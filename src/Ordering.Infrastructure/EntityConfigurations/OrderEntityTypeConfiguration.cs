@@ -32,5 +32,14 @@ class OrderEntityTypeConfiguration : IEntityTypeConfiguration<Order>
         orderConfiguration.HasOne(o => o.Buyer)
             .WithMany()
             .HasForeignKey(o => o.BuyerId);
+
+        orderConfiguration.Metadata
+            .FindNavigation(nameof(Order.StatusHistory))!
+            .SetPropertyAccessMode(PropertyAccessMode.Field);
+
+        orderConfiguration.HasMany(o => o.StatusHistory)
+            .WithOne()
+            .HasForeignKey(h => h.OrderId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

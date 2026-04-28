@@ -16,7 +16,7 @@ public class Order
     public Buyer Buyer { get; }
 
     public OrderStatus OrderStatus { get; private set; }
-    
+
     public string Description { get; private set; }
 
     // Draft orders have this set to true. Currently we don't check anywhere the draft status of an Order, but we could do it if needed
@@ -29,8 +29,10 @@ public class Order
     // so OrderItems cannot be added from "outside the AggregateRoot" directly to the collection,
     // but only through the method OrderAggregateRoot.AddOrderItem() which includes behavior.
     private readonly List<OrderItem> _orderItems;
-   
+    private readonly List<OrderStatusHistory> _statusHistory;
+
     public IReadOnlyCollection<OrderItem> OrderItems => _orderItems.AsReadOnly();
+    public IReadOnlyCollection<OrderStatusHistory> StatusHistory => _statusHistory.AsReadOnly();
 
     public int? PaymentId { get; private set; }
 
@@ -46,6 +48,7 @@ public class Order
     protected Order()
     {
         _orderItems = new List<OrderItem>();
+        _statusHistory = new List<OrderStatusHistory>();
         _isDraft = false;
     }
 
@@ -56,7 +59,10 @@ public class Order
         PaymentId = paymentMethodId;
         OrderStatus = OrderStatus.Submitted;
         OrderDate = DateTime.UtcNow;
+        Description = "The order was submitted.";
         Address = address;
+
+        AddStatusHistory(OrderStatus.Submitted, Description);
 
         // Add the OrderStarterDomainEvent to the domain events collection 
         // to be raised/dispatched when committing changes into the Database [ After DbContext.SaveChanges() ]
@@ -95,13 +101,15 @@ public class Order
         BuyerId = buyerId;
         PaymentId = paymentId;
     }
-    
+
     public void SetAwaitingValidationStatus()
     {
         if (OrderStatus == OrderStatus.Submitted)
         {
             AddDomainEvent(new OrderStatusChangedToAwaitingValidationDomainEvent(Id, _orderItems));
             OrderStatus = OrderStatus.AwaitingValidation;
+            Description = "The order is awaiting stock validation.";
+            AddStatusHistory(OrderStatus.AwaitingValidation, Description);
         }
     }
 
@@ -113,6 +121,7 @@ public class Order
 
             OrderStatus = OrderStatus.StockConfirmed;
             Description = "All the items were confirmed with available stock.";
+            AddStatusHistory(OrderStatus.StockConfirmed, Description);
         }
     }
 
@@ -124,6 +133,7 @@ public class Order
 
             OrderStatus = OrderStatus.Paid;
             Description = "The payment was performed at a simulated \"American Bank checking bank account ending on XX35071\"";
+            AddStatusHistory(OrderStatus.Paid, Description);
         }
     }
 
@@ -136,6 +146,7 @@ public class Order
 
         OrderStatus = OrderStatus.Shipped;
         Description = "The order was shipped.";
+        AddStatusHistory(OrderStatus.Shipped, Description);
         AddDomainEvent(new OrderShippedDomainEvent(this));
     }
 
@@ -149,6 +160,7 @@ public class Order
 
         OrderStatus = OrderStatus.Cancelled;
         Description = "The order was cancelled.";
+        AddStatusHistory(OrderStatus.Cancelled, Description);
         AddDomainEvent(new OrderCancelledDomainEvent(this));
     }
 
@@ -164,6 +176,7 @@ public class Order
 
             var itemsStockRejectedDescription = string.Join(", ", itemsStockRejectedProductNames);
             Description = $"The product items don't have stock: ({itemsStockRejectedDescription}).";
+            AddStatusHistory(OrderStatus.Cancelled, Description);
         }
     }
 
@@ -180,6 +193,11 @@ public class Order
     private void StatusChangeException(OrderStatus orderStatusToChange)
     {
         throw new OrderingDomainException($"Is not possible to change the order status from {OrderStatus} to {orderStatusToChange}.");
+    }
+
+    private void AddStatusHistory(OrderStatus status, string reason)
+    {
+        _statusHistory.Add(new OrderStatusHistory(Id, status, reason));
     }
 
     public decimal GetTotal() => _orderItems.Sum(o => o.Units * o.UnitPrice);

@@ -74,7 +74,7 @@ public static class OrdersApi
     {
         try
         {
-            var order = await services.Queries.GetOrderAsync(orderId);
+            var order = await services.Queries.GetOrderAsync(orderId, ct);
             return TypedResults.Ok(order);
         }
         catch
@@ -86,13 +86,13 @@ public static class OrdersApi
     public static async Task<Ok<IEnumerable<OrderSummary>>> GetOrdersByUserAsync(CancellationToken ct, [AsParameters] OrderHistoryQuery query, [AsParameters] OrderServices services)
     {
         var userId = services.IdentityService.GetUserIdentity();
-        var orders = await services.Queries.GetOrdersFromUserAsync(userId, query);
+        var orders = await services.Queries.GetOrdersFromUserAsync(userId, query, ct);
         return TypedResults.Ok(orders);
     }
 
     public static async Task<Ok<IEnumerable<CardType>>> GetCardTypesAsync(CancellationToken ct, IOrderQueries orderQueries)
     {
-        var cardTypes = await orderQueries.GetCardTypesAsync();
+        var cardTypes = await orderQueries.GetCardTypesAsync(ct);
         return TypedResults.Ok(cardTypes);
     }
 

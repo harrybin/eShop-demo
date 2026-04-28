@@ -1,6 +1,6 @@
 # Story 4.1: Complete order status timeline read model and UI timeline
 
-Status: ready-for-dev
+Status: in-progress
 
 ## Story
 
@@ -19,12 +19,12 @@ so that I can understand where my order is and what happens next.
 
 ## Tasks / Subtasks
 
-- [ ] Introduce or finalize status history persistence model in Ordering data layer (AC: 1)
-  - [ ] Add migration and update data access paths used by order status transitions
-- [ ] Extend query path for order details/history with timeline entries (AC: 2, 4)
-  - [ ] Normalize labels and ordering rules for lifecycle states
-- [ ] Complete timeline rendering in WebApp order details surface (AC: 3)
-  - [ ] Reuse shared status semantics from UX spec and avoid page-specific vocabulary drift
+- [x] Introduce or finalize status history persistence model in Ordering data layer (AC: 1)
+  - [x] Add migration and update data access paths used by order status transitions
+- [x] Extend query path for order details/history with timeline entries (AC: 2, 4)
+  - [x] Normalize labels and ordering rules for lifecycle states
+- [x] Complete timeline rendering in WebApp order details surface (AC: 3)
+  - [x] Reuse shared status semantics from UX spec and avoid page-specific vocabulary drift
 - [ ] Add test coverage in Ordering unit + functional test projects (AC: 6)
   - [ ] Validate empty, partial, and full lifecycle timelines
 
@@ -57,17 +57,44 @@ GPT-5.3-Codex
 
 ### Debug Log References
 
-- n/a
+- `dotnet build src/Ordering.Infrastructure/Ordering.Infrastructure.csproj`
+- `dotnet build src/Ordering.API/Ordering.API.csproj`
+- `dotnet build src/WebApp/WebApp.csproj`
+- `dotnet test --project tests/Ordering.UnitTests/Ordering.UnitTests.csproj --filter "FullyQualifiedName~OrderAggregateTest|FullyQualifiedName~OrdersWebApiTest"`
+- `dotnet test --project tests/Ordering.UnitTests/Ordering.UnitTests.csproj`
+- `dotnet test --project tests/Ordering.FunctionalTests/Ordering.FunctionalTests.csproj -- --filter-method "*OrderingApiTests.OrderingContextHasNoPendingMigrations" --filter-method "*OrderingApiTests.GetOrderReturnsPendingTimelineForInFlightOrder" --filter-method "*OrderingApiTests.GetOrderSynthesizesTimelineForHistoricalOrderWithoutHistoryRows"` (blocked by PostgreSQL timeout during host startup)
+- `dotnet build eShop.slnx`
 
 ### Completion Notes List
 
-- Story context generated from brownfield gap analysis of current implementation state.
+- Added `OrderStatusHistory` domain entity and aggregate-owned status-history recording for all order lifecycle transitions.
+- Added `OrderStatusHistoryEntityTypeConfiguration`, wired `DbSet<OrderStatusHistory>` into `OrderingContext`, and added migration `20260428142500_AddOrderStatusHistory`.
+- Extended order-details query contract with timeline entries and deterministic fallback timeline synthesis for historical orders without persisted history rows.
+- Updated Orders API query interfaces to pass cancellation tokens through all query methods.
+- Updated WebApp order details models and UI to render API-provided timeline entries with shared status semantics via `OrderStatusSemantics`.
+- Added/updated unit tests in Ordering UnitTests for aggregate status-history behavior and Orders API query wrappers.
+- Added functional tests for timeline contract behavior, but execution is currently blocked by PostgreSQL connection timeouts in functional test host startup.
 
 ### File List
 
-- src/Ordering.API/**
-- src/Ordering.Domain/**
-- src/Ordering.Infrastructure/**
-- src/WebApp/**
-- tests/Ordering.UnitTests/**
-- tests/Ordering.FunctionalTests/**
+- src/Ordering.Domain/AggregatesModel/OrderAggregate/Order.cs
+- src/Ordering.Domain/AggregatesModel/OrderAggregate/OrderStatusHistory.cs
+- src/Ordering.Infrastructure/OrderingContext.cs
+- src/Ordering.Infrastructure/EntityConfigurations/OrderEntityTypeConfiguration.cs
+- src/Ordering.Infrastructure/EntityConfigurations/OrderStatusHistoryEntityTypeConfiguration.cs
+- src/Ordering.Infrastructure/Migrations/20260428142500_AddOrderStatusHistory.cs
+- src/Ordering.API/Application/Queries/IOrderQueries.cs
+- src/Ordering.API/Application/Queries/OrderQueries.cs
+- src/Ordering.API/Application/Queries/OrderViewModel.cs
+- src/Ordering.API/Apis/OrdersApi.cs
+- src/WebApp/Services/OrderDetailsRecord.cs
+- src/WebApp/Services/OrderStatusSemantics.cs
+- src/WebApp/Components/Pages/User/OrderDetails.razor
+- src/WebApp/Components/Pages/User/OrderDetails.razor.css
+- tests/Ordering.UnitTests/Domain/OrderAggregateTest.cs
+- tests/Ordering.UnitTests/Application/OrdersWebApiTest.cs
+- tests/Ordering.FunctionalTests/OrderingApiTests.cs
+
+### Change Log
+
+- 2026-04-28: Implemented order status history persistence and timeline projection/query rendering across Ordering API and WebApp; added timeline unit/functional tests; functional execution blocked by PostgreSQL timeout in test host startup.

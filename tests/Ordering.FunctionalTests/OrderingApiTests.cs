@@ -169,6 +169,55 @@ public sealed class OrderingApiTests : IClassFixture<OrderingApiFixture>
     }
 
     [Fact]
+    public async Task GetOrderReturnsPendingTimelineForInFlightOrder()
+    {
+        var orderId = await CreateOrderAsync(order => order.AddOrderItem(17, "Timeline Product", 12m, 0m, string.Empty));
+
+        var response = await _httpClient.GetAsync($"api/orders/{orderId}", TestContext.Current.CancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        var order = await DeserializeOrderAsync(response);
+
+        Assert.NotNull(order);
+        Assert.Equal(new[] { "Submitted", "AwaitingValidation", "StockConfirmed", "Paid", "Shipped" }, order.Timeline.Select(step => step.Status));
+        Assert.Equal("completed", order.Timeline[0].State);
+        Assert.All(order.Timeline.Skip(1), step => Assert.Equal("pending", step.State));
+    }
+
+    [Fact]
+    public async Task GetOrderSynthesizesTimelineForHistoricalOrderWithoutHistoryRows()
+    {
+        var orderId = await CreateOrderAsync(order =>
+        {
+            order.AddOrderItem(23, "Legacy Product", 8m, 0m, string.Empty);
+            order.SetAwaitingValidationStatus();
+            order.SetStockConfirmedStatus();
+            order.SetPaidStatus();
+        });
+
+        await using (var scope = _webApplicationFactory.Services.CreateAsyncScope())
+        {
+            var orderingContext = scope.ServiceProvider.GetRequiredService<OrderingContext>();
+            var historyRows = await orderingContext.OrderStatusHistory
+                .Where(entry => entry.OrderId == orderId)
+                .ToListAsync(TestContext.Current.CancellationToken);
+
+            orderingContext.OrderStatusHistory.RemoveRange(historyRows);
+            await orderingContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        var response = await _httpClient.GetAsync($"api/orders/{orderId}", TestContext.Current.CancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        var order = await DeserializeOrderAsync(response);
+
+        Assert.NotNull(order);
+        Assert.Equal(new[] { "Submitted", "AwaitingValidation", "StockConfirmed", "Paid", "Shipped" }, order.Timeline.Select(step => step.Status));
+        Assert.Equal(new[] { "completed", "completed", "completed", "completed", "pending" }, order.Timeline.Select(step => step.State));
+        Assert.All(order.Timeline.Take(4), step => Assert.NotNull(step.Timestamp));
+    }
+
+    [Fact]
     public async Task AddNewEmptyOrder()
     {
         // Act
@@ -290,6 +339,38 @@ public sealed class OrderingApiTests : IClassFixture<OrderingApiFixture>
         {
             PropertyNameCaseInsensitive = true
         }) ?? new List<OrderSummary>();
+    }
+
+    private static async Task<eShop.Ordering.API.Application.Queries.Order> DeserializeOrderAsync(HttpResponseMessage response)
+    {
+        var payload = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        return JsonSerializer.Deserialize<eShop.Ordering.API.Application.Queries.Order>(payload, new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        });
+    }
+
+    private async Task<int> CreateOrderAsync(Action<eShop.Ordering.Domain.AggregatesModel.OrderAggregate.Order> configureOrder)
+    {
+        await using var scope = _webApplicationFactory.Services.CreateAsyncScope();
+        var orderingContext = scope.ServiceProvider.GetRequiredService<OrderingContext>();
+
+        var order = new eShop.Ordering.Domain.AggregatesModel.OrderAggregate.Order(
+            AutoAuthorizeMiddleware.IDENTITY_ID,
+            "Timeline Test User",
+            new eShop.Ordering.Domain.AggregatesModel.OrderAggregate.Address("1 Timeline Ave", "Seattle", "WA", "USA", "98101"),
+            cardTypeId: 1,
+            cardNumber: "4111111111111111",
+            cardSecurityNumber: "123",
+            cardHolderName: "Timeline Test User",
+            cardExpiration: DateTime.UtcNow.AddYears(1));
+
+        configureOrder(order);
+
+        orderingContext.Orders.Add(order);
+        await orderingContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        return order.Id;
     }
 
     string BuildOrder()

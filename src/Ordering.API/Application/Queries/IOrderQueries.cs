@@ -2,11 +2,11 @@
 
 public interface IOrderQueries
 {
-    Task<Order> GetOrderAsync(int id);
+    Task<Order> GetOrderAsync(int id, CancellationToken cancellationToken);
 
-    Task<IEnumerable<OrderSummary>> GetOrdersFromUserAsync(string userId);
+    Task<IEnumerable<OrderSummary>> GetOrdersFromUserAsync(string userId, CancellationToken cancellationToken);
 
-    Task<IEnumerable<OrderSummary>> GetOrdersFromUserAsync(string userId, OrderHistoryQuery query);
+    Task<IEnumerable<OrderSummary>> GetOrdersFromUserAsync(string userId, OrderHistoryQuery query, CancellationToken cancellationToken);
 
-    Task<IEnumerable<CardType>> GetCardTypesAsync();
+    Task<IEnumerable<CardType>> GetCardTypesAsync(CancellationToken cancellationToken);
 }

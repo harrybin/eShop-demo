@@ -15,6 +15,7 @@ public class OrderingContext : DbContext, IUnitOfWork
     public DbSet<PaymentMethod> Payments { get; set; }
     public DbSet<Buyer> Buyers { get; set; }
     public DbSet<CardType> CardTypes { get; set; }
+    public DbSet<OrderStatusHistory> OrderStatusHistory { get; set; }
 
     private IDbContextTransaction _currentTransaction;
 
@@ -33,6 +34,7 @@ public class OrderingContext : DbContext, IUnitOfWork
         modelBuilder.ApplyConfiguration(new OrderItemEntityTypeConfiguration());
         modelBuilder.ApplyConfiguration(new CardTypeEntityTypeConfiguration());
         modelBuilder.ApplyConfiguration(new BuyerEntityTypeConfiguration());
+        modelBuilder.ApplyConfiguration(new OrderStatusHistoryEntityTypeConfiguration());
         modelBuilder.UseIntegrationEventLogs();
     }
 

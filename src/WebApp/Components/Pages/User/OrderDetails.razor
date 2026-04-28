@@ -17,6 +17,8 @@
 }
 else
 {
+    var currentStatus = OrderStatusSemantics.BuildCurrentStatus(order);
+
     <div class="order-summary-card">
         <div>
             <div class="label">Order number</div>
@@ -28,7 +30,7 @@ else
         </div>
         <div>
             <div class="label">Current status</div>
-            <div class="value status @order.Status.ToLowerInvariant()">@order.Status</div>
+            <div class="value status-chip @currentStatus.State" aria-live="polite">@currentStatus.Label</div>
         </div>
         <div>
             <div class="label">Total</div>
@@ -38,15 +40,31 @@ else
 
     <div class="tracking-card">
         <h2>Status tracking</h2>
-        <ul class="tracking-list">
-            @foreach (var step in trackingSteps)
+        <ol class="tracking-list" aria-label="Order status timeline">
+            @foreach (var step in order.Timeline)
             {
-                <li class="tracking-step @(step.IsComplete ? "complete" : "pending")">
+                var stateClass = OrderStatusSemantics.BuildTimelineStateClass(step);
+                <li class="tracking-step @stateClass">
                     <span class="dot" aria-hidden="true"></span>
-                    <span>@step.Label</span>
+                    <div class="tracking-content">
+                        <span class="tracking-label">@step.Label</span>
+                        @if (step.Timestamp is { } timestamp)
+                        {
+                            <span class="tracking-meta">@timestamp.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</span>
+                        }
+                        else
+                        {
+                            <span class="tracking-meta">Pending</span>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(step.Detail))
+                        {
+                            <span class="tracking-detail">@step.Detail</span>
+                        }
+                    </div>
                 </li>
             }
-        </ul>
+        </ol>
     </div>
 
     <div class="address-card">
@@ -87,7 +105,6 @@ else
 
     private OrderDetailsRecord? order;
     private bool notFound;
-    private IReadOnlyList<TrackingStep> trackingSteps = [];
 
     protected override async Task OnParametersSetAsync()
     {
@@ -96,36 +113,7 @@ else
         if (order is null)
         {
             notFound = true;
-            trackingSteps = [];
             return;
         }
-
-        trackingSteps = BuildTrackingSteps(order.Status);
     }
-
-    private static IReadOnlyList<TrackingStep> BuildTrackingSteps(string currentStatus)
-    {
-        var steps = new[] { "Submitted", "AwaitingValidation", "StockConfirmed", "Paid", "Shipped" };
-
-        if (string.Equals(currentStatus, "Cancelled", StringComparison.OrdinalIgnoreCase))
-        {
-            return
-            [
-                new TrackingStep("Submitted", true),
-                new TrackingStep("Cancelled", true)
-            ];
-        }
-
-        var currentIndex = Array.FindIndex(steps, s => string.Equals(s, currentStatus, StringComparison.OrdinalIgnoreCase));
-        if (currentIndex < 0)
-        {
-            currentIndex = 0;
-        }
-
-        return steps
-            .Select((label, index) => new TrackingStep(label, index <= currentIndex))
-            .ToArray();
-    }
-
-    private sealed record TrackingStep(string Label, bool IsComplete);
 }

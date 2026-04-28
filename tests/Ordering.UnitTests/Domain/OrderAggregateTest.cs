@@ -52,9 +52,9 @@ public class OrderAggregateTest
         var discount = 15;
         var pictureUrl = "FakeUrl";
         var units = 1;
-        
+
         //Act - Assert
-        Assert.ThrowsExactly<OrderingDomainException>(() => new OrderItem(productId, productName, unitPrice, discount, pictureUrl, units));       
+        Assert.ThrowsExactly<OrderingDomainException>(() => new OrderItem(productId, productName, unitPrice, discount, pictureUrl, units));
     }
 
     [TestMethod]
@@ -174,5 +174,57 @@ public class OrderAggregateTest
         fakeOrder.RemoveDomainEvent(@fakeEvent);
         //Assert
         Assert.HasCount(expectedResult, fakeOrder.DomainEvents);
+    }
+
+    [TestMethod]
+    public void New_order_records_submitted_status_history()
+    {
+        var order = new OrderBuilder(new AddressBuilder().Build()).Build();
+
+        Assert.AreEqual(1, order.StatusHistory.Count);
+
+        var submittedEntry = order.StatusHistory.Single();
+        Assert.AreEqual(OrderStatus.Submitted, submittedEntry.Status);
+        Assert.AreEqual("The order was submitted.", submittedEntry.Reason);
+    }
+
+    [TestMethod]
+    public void Status_transitions_append_history_in_lifecycle_order()
+    {
+        var order = new OrderBuilder(new AddressBuilder().Build())
+            .AddOne(1, "cup", 10.0m, 0, string.Empty)
+            .Build();
+
+        order.SetAwaitingValidationStatus();
+        order.SetStockConfirmedStatus();
+        order.SetPaidStatus();
+        order.SetShippedStatus();
+
+        CollectionAssert.AreEqual(
+        new[]
+        {
+            OrderStatus.Submitted,
+            OrderStatus.AwaitingValidation,
+            OrderStatus.StockConfirmed,
+            OrderStatus.Paid,
+            OrderStatus.Shipped
+        },
+            order.StatusHistory.Select(entry => entry.Status).ToArray());
+    }
+
+    [TestMethod]
+    public void Stock_rejection_cancellation_records_cancelled_history()
+    {
+        var order = new OrderBuilder(new AddressBuilder().Build())
+            .AddOne(9, "plate", 12m, 0, string.Empty)
+            .Build();
+
+        order.SetAwaitingValidationStatus();
+        order.SetCancelledStatusWhenStockIsRejected([9]);
+
+        var cancelledEntry = order.StatusHistory.Last();
+
+        Assert.AreEqual(OrderStatus.Cancelled, cancelledEntry.Status);
+        StringAssert.Contains(cancelledEntry.Reason, "don't have stock");
     }
 }

@@ -11,10 +11,18 @@ public record OrderDetailsRecord(
     string Zipcode,
     string Country,
     List<OrderItemRecord> OrderItems,
-    decimal Total);
+    decimal Total,
+    List<OrderTimelineEntryRecord> Timeline);
 
 public record OrderItemRecord(
     string ProductName,
     int Units,
     double UnitPrice,
     string PictureUrl);
+
+public record OrderTimelineEntryRecord(
+    string Status,
+    string Label,
+    string State,
+    DateTime? Timestamp,
+    string? Detail);
